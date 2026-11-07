@@ -100,3 +100,27 @@ def test_voice_follows_language_not_ipa():
 def test_pali_ipa_short_vowel_before_double_consonant():
     assert gl.pali_ipa("mettā") == "mettaː"
     assert gl.pali_ipa("vedanā") == "ʋeːdɐnaː"
+
+
+def test_pali_forms_hide_mishearings_and_diacritic_variants():
+    term = Term("sila", "sīla", ["shila"], "pali", ["нравственность"], False, misheard=["sheila", "sheela"])
+    heard = {"sheela", "sheila", "shila", "sila", "sīla", "sīlā", "śīla", "silas"}
+    assert build._forms(heard, term) == {"sīla", "shila", "sīlas"}
+    assert build._forms({"sensations"}, None) == {"sensations"}
+
+
+def test_glossary_meanings_are_not_split_on_commas():
+    # ru: [Киса Готами — мать, потерявшая сына] once became three meanings.
+    for t in gl.load():
+        for prev, cur in zip(t.ru, t.ru[1:], strict=False):
+            assert not ("—" in prev and cur[:1].islower()), (t.key, t.ru)
+
+
+def test_hidden_mishearings_stay_searchable():
+    term = Term("sila", "sīla", ["shila"], "pali", ["нравственность"], False, misheard=["sheila"])
+    g = gl.index([term])
+    lm = Lemma(key="sila", lemma="sila", lang="pali", pos="NOUN", freq=2, occurrences=[], is_term=True)
+    lm.forms = {"sheila", "sila"}
+    row = build.entries({"sila": lm}, {}, g, {})[0]
+    assert row["forms"] == ["sīla"]
+    assert row["aliases"] == ["sheila", "shila"]

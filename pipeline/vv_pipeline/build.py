@@ -58,15 +58,19 @@ def entries(
         # spelling, IPA, voice or engine gets a new URL, never a stale cache.
         spoken = tts.spec(lemma, lang, term.ipa if term else None, engine)
         voice = hashlib.sha256(spoken.encode()).hexdigest()[:10]
-        heard = {fold(f) for f in lm.forms}
-        aliases = sorted({v for v in (term.variants if term else []) if fold(v) not in heard})
+        forms = _forms(lm.forms, term)
+        shown = {fold(f) for f in forms}
+        # Search-only spellings: deliberate variants never heard, and the
+        # heard spellings that forms hide (sheila), so search still finds them.
+        extra = [*term.variants, *term.misheard, *lm.forms] if term else []
+        aliases = sorted({fold(v) for v in extra} - shown)
         rows.append(
             {
                 "key": k,
                 "lemma": lemma,
                 "lang": lang,
                 "pos": tr.pos or lm.pos,
-                "forms": sorted(lm.forms),
+                "forms": sorted(forms),
                 "aliases": aliases,
                 "freq": lm.freq,
                 "ru": ru,
@@ -77,6 +81,26 @@ def entries(
             }
         )
     return rows
+
+
+def _forms(heard: set[str], term) -> set[str]:
+    """For a Pali term, the glossary spelling stands for every spelling that
+    differs only by diacritics or was misheard; forms said on purpose
+    (Sanskrit "shila") and plurals stay. English words keep what was heard."""
+    if term is None or term.lang != "pali":
+        return set(heard)
+    base = fold(term.display)
+    misheard = {fold(m) for m in term.misheard}
+    out = {term.display}
+    for f in heard:
+        k = fold(f)
+        if k in (base, base.replace("-", " ")) or k in misheard:
+            continue
+        if k.removesuffix("s") in ({base} | misheard):
+            out.add(term.display + "s")
+        else:
+            out.add(f)
+    return out
 
 
 def with_existing_audio(rows: list[dict], audio_dir: Path) -> list[dict]:
