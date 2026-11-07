@@ -58,15 +58,19 @@ def entries(
         # spelling, IPA, voice or engine gets a new URL, never a stale cache.
         spoken = tts.spec(lemma, lang, term.ipa if term else None, engine)
         voice = hashlib.sha256(spoken.encode()).hexdigest()[:10]
-        heard = {fold(f) for f in lm.forms}
-        aliases = sorted({v for v in (term.variants if term else []) if fold(v) not in heard})
+        forms = _forms(lm.forms, term)
+        shown = {fold(f) for f in forms}
+        # Search-only spellings: deliberate variants never heard, and the
+        # heard spellings that forms hide (sheila), so search still finds them.
+        extra = [*term.variants, *term.misheard, *lm.forms] if term else []
+        aliases = sorted({fold(v) for v in extra} - shown)
         rows.append(
             {
                 "key": k,
                 "lemma": lemma,
                 "lang": lang,
                 "pos": tr.pos or lm.pos,
-                "forms": sorted(_forms(lm.forms, term)),
+                "forms": sorted(forms),
                 "aliases": aliases,
                 "freq": lm.freq,
                 "ru": ru,

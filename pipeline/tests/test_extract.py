@@ -193,3 +193,10 @@ def test_run_together_mishearing_of_a_compound_is_respelled():
     g = gl.index([Term("u-ba-khin", "U Ba Khin", [], "pali", ["У Ба Кхин"], False, misheard=["ubakhin"])])
     assert g.respell("My teacher Ubakhin.") == "My teacher U Ba Khin."
     assert g.respell("Khin alone.") == "Khin alone."
+
+
+def test_english_plural_of_a_misheard_pali_word_counts_for_the_term():
+    g = gl.index([Term("sila", "sīla", [], "pali", ["нравственность"], False, misheard=["sheila"])])
+    out = run([transcript(seg(" Of these five sheilas, keep each sheila."))], g, fake_analyzer)
+    assert out["sila"].freq == 2
+    assert "sheila" not in out

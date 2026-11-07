@@ -39,8 +39,10 @@ def _pick(lm: Lemma) -> list[Example]:
         n = len(occ.sentence.split())
         if MIN_WORDS <= n <= MAX_WORDS and occ.sentence not in seen:
             seen.add(occ.sentence)
-            candidates.append((not _whole(occ.sentence), abs(n - IDEAL_WORDS), occ.talk, occ.t, occ))
-    candidates.sort(key=lambda c: c[:4])
+            candidates.append(
+                (not _whole(occ.sentence), abs(n - IDEAL_WORDS), occ.talk, occ.t, occ.sentence, occ)
+            )
+    candidates.sort(key=lambda c: c[:5])  # the sentence breaks ties: rebuilds are stable
 
     picked, talks = [], set()
     for *_, occ in candidates:  # first pass: one per talk, best first
@@ -58,6 +60,9 @@ def _pick(lm: Lemma) -> list[Example]:
 
 
 def _whole(sentence: str) -> bool:
-    """Starts with a capital and ends like a sentence: not a cut-off fragment."""
-    s = sentence.strip()
-    return bool(s) and s[0].isupper() and s[-1] in ".?!"
+    """Starts with a capital or a digit and ends like a sentence (a closing
+    quote or bracket may follow), not with "..." or mid-clause."""
+    s = sentence.strip().rstrip("\"'”’)]»")
+    if not s or s.endswith(("...", "…")):
+        return False
+    return (s[0].isupper() or s[0].isdigit()) and s[-1] in ".?!"

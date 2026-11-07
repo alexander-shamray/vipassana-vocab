@@ -61,3 +61,13 @@ def test_single_occurrence():
     lemmas = {"rare": lemma("rare", occs=[occ(5, "a rare word here", t=77)]), **filler(100)}
     [e] = choose(lemmas, set())["rare"]
     assert (e.talk, e.t, e.video_id) == (5, 77, "v5")
+
+
+def test_whole_sentence_rules():
+    from vv_pipeline.examples import _whole
+
+    assert _whole("10 days of Vipassana.")
+    assert _whole('He said, "Be happy."')
+    assert not _whole("And then he went...")
+    assert not _whole("one of your sīla.")
+    assert not _whole("This goes on and on")

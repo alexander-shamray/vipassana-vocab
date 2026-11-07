@@ -143,6 +143,9 @@ def _segment(
             continue
         word = clean(t.text)
         term = glossary.single.get(folded[i])
+        if term is None and folded[i].endswith("s"):  # English plural of a Pali word: "sheilas"
+            plural_of = glossary.single.get(folded[i][:-1])
+            term = plural_of if plural_of is not None and plural_of.lang == "pali" else None
         if term is not None:
             add(term.key, term.display, term.lang, "NOUN", word.lower(), t.idx, True)
             continue
