@@ -30,7 +30,7 @@ func TestServe_Smoke(t *testing.T) {
 		t.Fatal(err)
 	}
 	done := make(chan error, 1)
-	go func() { done <- serve(ctx, getenv, ln) }()
+	go func() { done <- serve(ctx, getenv, ln, "") }()
 	base := "http://" + ln.Addr().String()
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -93,9 +93,11 @@ func TestWithLocalAudio(t *testing.T) {
 			t.Errorf("GET %s = %d %q, want %q", path, rec.Code, rec.Body.String(), want)
 		}
 	}
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/audio/missing.mp3", nil))
-	if rec.Code != 404 {
-		t.Errorf("missing mp3 = %d, want 404", rec.Code)
+	for _, path := range []string{"/audio/missing.mp3", "/audio/", "/audio/../main.go"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code == 200 {
+			t.Errorf("GET %s = 200, want an error (no listing, no escape)", path)
+		}
 	}
 }

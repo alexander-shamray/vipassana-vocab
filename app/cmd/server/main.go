@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -54,7 +55,7 @@ func dispatch(ctx context.Context, args []string, getenv func(string) string) er
 		if getenv("BASE_URL") == "" {
 			return errors.New("serve: BASE_URL is required, e.g. https://<app>.fly.dev")
 		}
-		return serve(ctx, getenv, nil)
+		return serve(ctx, getenv, nil, "")
 	case "import":
 		return importCmd(ctx, args[1:], getenv)
 	case "dev":
@@ -122,9 +123,10 @@ func dev(ctx context.Context, getenv func(string) string) error {
 	}
 	// Pronunciations made locally by the pipeline (`--tts kokoro`) are
 	// served from disk, so the dev site plays them without any bucket.
+	audioDir := ""
 	if getenv("AUDIO_BASE_URL") == "" {
 		if fi, err := os.Stat(localAudioDir); err == nil && fi.IsDir() {
-			defaults["LOCAL_AUDIO_DIR"] = localAudioDir
+			audioDir = localAudioDir
 			defaults["AUDIO_BASE_URL"] = localAudioPrefix
 		}
 	}
@@ -161,7 +163,7 @@ func dev(ctx context.Context, getenv func(string) string) error {
 		return err
 	}
 	slog.Info("dev server", "url", cfg.BaseURL, "login", cfg.DevLogin)
-	return serve(ctx, env, ln)
+	return serve(ctx, env, ln, audioDir)
 }
 
 const (
@@ -169,17 +171,25 @@ const (
 	localAudioPrefix = "/audio"
 )
 
-// withLocalAudio serves the mp3 files of dir under /audio/ next to the site.
+// withLocalAudio serves the files of dir under /audio/ next to the site,
+// without directory listings. Only `server dev` uses it.
 func withLocalAudio(site http.Handler, dir string) http.Handler {
+	files := http.StripPrefix(localAudioPrefix+"/", http.FileServer(http.Dir(dir)))
 	mux := http.NewServeMux()
-	mux.Handle("GET "+localAudioPrefix+"/", http.StripPrefix(localAudioPrefix+"/", http.FileServer(http.Dir(dir))))
+	mux.HandleFunc("GET "+localAudioPrefix+"/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		files.ServeHTTP(w, r)
+	})
 	mux.Handle("/", site)
 	return mux
 }
 
 // serve runs the site until ctx is cancelled. ln is for tests; nil listens
-// on cfg.Port.
-func serve(ctx context.Context, getenv func(string) string, ln net.Listener) error {
+// on cfg.Port. audioDir, set only by `server dev`, is served at /audio/.
+func serve(ctx context.Context, getenv func(string) string, ln net.Listener, audioDir string) error {
 	cfg, err := config.Load(getenv)
 	if err != nil {
 		return err
@@ -224,9 +234,9 @@ func serve(ctx context.Context, getenv func(string) string, ln net.Listener) err
 		AuthRoutes:   a.Routes,
 	})
 
-	if dir := getenv("LOCAL_AUDIO_DIR"); dir != "" {
-		handler = withLocalAudio(handler, dir)
-		slog.Info("serving local pronunciations", "dir", dir, "at", localAudioPrefix)
+	if audioDir != "" {
+		handler = withLocalAudio(handler, audioDir)
+		slog.Info("serving local pronunciations", "dir", audioDir, "at", localAudioPrefix)
 	}
 
 	srv := &http.Server{

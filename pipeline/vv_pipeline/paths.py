@@ -7,6 +7,7 @@ DATA = ROOT / "data"
 AUDIO = DATA / "audio"
 TRANSCRIPTS = DATA / "transcripts"
 TTS = DATA / "audio_tts"
+TTS_ENGINE = DATA / "tts_engine"  # the engine the current words.jsonl names its mp3s for
 TALKS = DATA / "talks.json"
 LEMMAS = DATA / "lemmas.json"
 TRANSLATIONS = DATA / "translations.json"

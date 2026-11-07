@@ -79,6 +79,11 @@ def entries(
     return rows
 
 
+def with_existing_audio(rows: list[dict], audio_dir: Path) -> list[dict]:
+    """Blank the mp3 name of every row whose recording was never made."""
+    return [r if r["audio"] and (audio_dir / r["audio"]).is_file() else {**r, "audio": ""} for r in rows]
+
+
 def write(
     rows: list[dict],
     examples: dict[str, list[Example]],

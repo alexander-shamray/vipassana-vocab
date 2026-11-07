@@ -42,3 +42,7 @@ def test_drops_devanagari():
 
 def test_drops_empty_text():
     assert not keep({**GOOD, "text": "   "})
+
+
+def test_drops_confident_hallucination_in_silence():
+    assert not keep({**GOOD, "text": " Thank you.", "avg_logprob": -0.3, "no_speech_prob": 0.95})

@@ -79,3 +79,18 @@ def test_audio_name_changes_with_the_engine():
     k = next(r for r in build.entries(lemmas(), {}, GLOSS, {}, "kokoro") if r["key"] == "panna")
     a = next(r for r in build.entries(lemmas(), {}, GLOSS, {}, "azure") if r["key"] == "panna")
     assert k["audio"] != a["audio"] and k["audio"].endswith(".mp3")
+
+
+def test_only_recorded_audio_is_named(tmp_path):
+    rows = build.entries(lemmas(), {}, GLOSS, {}, "kokoro")
+    made = rows[0]["audio"]
+    (tmp_path / made).write_bytes(b"ID3")
+    out = build.with_existing_audio(rows, tmp_path)
+    assert out[0]["audio"] == made
+    assert all(r["audio"] == "" for r in out[1:])
+
+
+def test_voice_follows_language_not_ipa():
+    # An English glossary term with an IPA fix keeps the English voice.
+    assert tts.spec("Dhamma", "en", "dʱɐmmɐ", "kokoro").startswith("kokoro|bm_george|ps|")
+    assert tts.spec("paññā", "pali", None, "kokoro") == "kokoro|hm_omega|text|paññā"

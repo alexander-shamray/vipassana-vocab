@@ -50,13 +50,19 @@ def kokoro_phonemes(ipa: str) -> str:
     return ps if ps.startswith(("ˈ", "ˌ")) else "ˈ" + ps
 
 
+def kokoro_voice(lang: str) -> str:
+    """The voice follows the language, as in Azure's ssml()."""
+    return KOKORO_VOICE_PALI if lang == "pali" else KOKORO_VOICE_EN
+
+
 def spec(text: str, lang: str, ipa: str | None, engine: str = DEFAULT_ENGINE) -> str:
     if engine == "azure":
         return ssml(text, lang, ipa)
     if engine == "kokoro":
+        voice = kokoro_voice(lang)
         if ipa:
-            return f"kokoro|{KOKORO_VOICE_PALI}|ps|{kokoro_phonemes(ipa)}"
-        return f"kokoro|{KOKORO_VOICE_EN}|text|{text}"
+            return f"kokoro|{voice}|ps|{kokoro_phonemes(ipa)}"
+        return f"kokoro|{voice}|text|{text}"
     raise ValueError(f"unknown TTS engine {engine!r}; choose one of {ENGINES}")
 
 
@@ -100,7 +106,9 @@ def _run_azure(rows: list[dict], ipa_by_key: dict[str, str | None], out_dir: Pat
             if resp.status_code != 200:
                 log.error("tts %s: HTTP %d %s", r["key"], resp.status_code, resp.text[:200])
                 continue
-            (out_dir / r["audio"]).write_bytes(resp.content)
+            tmp = out_dir / (r["audio"] + ".tmp")
+            tmp.write_bytes(resp.content)
+            tmp.replace(out_dir / r["audio"])
             time.sleep(1 / REQUESTS_PER_SECOND)
 
 
@@ -116,18 +124,28 @@ def _run_kokoro(rows: list[dict], ipa_by_key: dict[str, str | None], out_dir: Pa
     hindi = KPipeline(lang_code="h", repo_id=KOKORO_REPO, model=model)
     for n, r in enumerate(rows, start=1):
         ipa = ipa_by_key.get(r["key"])
+        voice = kokoro_voice(r["lang"])
+        pipe = hindi if voice == KOKORO_VOICE_PALI else english
+        target = out_dir / r["audio"]
+        tmp = target.with_name(target.name + ".tmp")
         try:
             if ipa:
                 ps = kokoro_phonemes(ipa)
                 if missing := {c for c in ps if c not in model.vocab}:
                     log.warning("tts %s: Kokoro has no phoneme for %s", r["key"], "".join(sorted(missing)))
-                chunks = [res.audio for res in hindi.generate_from_tokens(ps, voice=KOKORO_VOICE_PALI)]
+                results = pipe.generate_from_tokens(ps, voice=voice)
             else:
-                chunks = [res.audio for res in english(r["lemma"], voice=KOKORO_VOICE_EN)]
-            audio = np.concatenate([c.cpu().numpy() for c in chunks if c is not None])
+                results = english(r["lemma"], voice=voice)
+            chunks = [res.audio.cpu().numpy() for res in results if res.audio is not None]
+            if not chunks:
+                raise ValueError("no audio (empty phonemes?)")
+            # Write then rename: an interrupted run never leaves a partial mp3
+            # that the exists() check would skip forever.
+            sf.write(tmp, np.concatenate(chunks), KOKORO_RATE, format="MP3")
+            tmp.replace(target)
         except Exception as e:  # one bad word must not stop thousands
             log.error("tts %s: %s", r["key"], e)
+            tmp.unlink(missing_ok=True)
             continue
-        sf.write(out_dir / r["audio"], audio, KOKORO_RATE, format="MP3")
         if n % 500 == 0:
             log.info("tts: %d of %d", n, len(rows))

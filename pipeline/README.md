@@ -13,10 +13,19 @@ py -3.12 -m venv .venv                      # .venv в .gitignore
 .venv/Scripts/python -m pip install -e ".[kokoro]"
 ```
 
-CUDA 12 (cuBLAS) и cuDNN 9 ставятся из pip вместе с `[run]`; ставить CUDA в
-систему не нужно — `transcribe` сам добавляет их в `PATH`. PyAV закреплён ниже
-15: faster-whisper 1.2 вызывает параметр, которого в PyAV 15+ нет. На Linux и
-macOS вместо `.venv/Scripts/python` — `.venv/bin/python`.
+CUDA 12 (cuBLAS) и cuDNN 9 ставятся из pip вместе с `[run]`. На Windows ставить
+CUDA в систему не нужно — `transcribe` сам добавляет их в `PATH`. На Linux
+укажите их перед запуском:
+
+```bash
+export LD_LIBRARY_PATH=$(.venv/bin/python -c 'import glob, os, nvidia; print(":".join(glob.glob(os.path.join(list(nvidia.__path__)[0], "*", "lib"))))')
+```
+
+На macOS видеокарт NVIDIA нет: расшифровка там пойдёт только на CPU
+(`device="cpu"` в `transcribe.py`), очень медленно. PyAV закреплён ниже 15:
+faster-whisper 1.2 вызывает параметр, которого в PyAV 15+ нет. На Linux и macOS
+вместо `.venv/Scripts/python` — `.venv/bin/python`. Для скачивания нужен `deno`
+(ставится из pip вместе с `[run]`): без него YouTube отвечает 403.
 
 | Шаг | Команда | Нужно | Результат |
 |---|---|---|---|
@@ -47,7 +56,7 @@ macOS вместо `.venv/Scripts/python` — `.venv/bin/python`.
 - Примеры: не больше 3 на слово, фраза 3–25 слов, по возможности из разных
   бесед; у стоп-слов и 2% самых частых слов примеров нет (у терминов — есть).
 - Отбрасываются отрезки с `avg_logprob < -1.0`, тишина (`no_speech_prob > 0.6`
-  вместе с `avg_logprob < -0.5`) и текст не латиницей. Язык по отрезкам не
+  вместе с `avg_logprob < -0.5`, либо `no_speech_prob > 0.9`) и текст не латиницей. Язык по отрезкам не
   определяется: на беседах 1–2 детектор принял за бенгальский, санскрит и
   тибетский 8,6% английских отрезков; пение на хинди вырезает VAD.
 - Перевод: `claude-opus-5-5`, `effort: low`, ответ по JSON-схеме, порции по 40 слов,
@@ -57,6 +66,9 @@ macOS вместо `.venv/Scripts/python` — `.venv/bin/python`.
   (`ʱ` заменяется на `ʰ`, которого Kokoro знает). `--tts azure`:
   `en-GB-RyanNeural` и `en-IN-PrabhatNeural` + IPA. Имя mp3 — хэш движка,
   голоса и произносимого, поэтому смена движка даёт новые файлы, а не старый
-  кэш. Сборка (`build`) должна идти с тем же `--tts`, что и озвучка.
+  кэш. Движок последней сборки запоминается в `data/tts_engine`: шаги без
+  `--tts` (например, один `upload`) берут его, а не движок по умолчанию.
+  В `words.jsonl` попадают только имена mp3, которые реально записаны;
+  остальные слова сайт произносит голосом браузера.
 - `server dev` сам раздаёт `data/audio_tts/` по адресу `/audio/`, так что
   локальный сайт играет mp3 без облака.

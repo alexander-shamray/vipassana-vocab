@@ -9,10 +9,13 @@ as a last guard.
 """
 
 MIN_AVG_LOGPROB = -1.0
-# Whisper's own silence rule pairs a high no-speech probability with an
-# unsure decode; a confident decode is speech even when no_speech_prob is high.
+# faster-whisper already drops no_speech_prob > 0.6 with avg_logprob < -1.0
+# while decoding. keep() widens that band to -0.5 but leaves a confident
+# decode alone (talk 1 had clear English at no_speech_prob 0.69), except
+# near-certain silence, where a confident "Thank you." is a hallucination.
 MAX_NO_SPEECH_PROB = 0.6
 SILENT_MAX_LOGPROB = -0.5
+SURE_SILENCE = 0.9
 MIN_LATIN_SHARE = 0.7
 
 
@@ -31,6 +34,7 @@ def keep(seg: dict) -> bool:
     logprob = seg.get("avg_logprob", 0.0)
     if logprob < MIN_AVG_LOGPROB:
         return False
-    if seg.get("no_speech_prob", 0.0) > MAX_NO_SPEECH_PROB and logprob < SILENT_MAX_LOGPROB:
+    no_speech = seg.get("no_speech_prob", 0.0)
+    if no_speech > SURE_SILENCE or (no_speech > MAX_NO_SPEECH_PROB and logprob < SILENT_MAX_LOGPROB):
         return False
     return latin_share(text) >= MIN_LATIN_SHARE

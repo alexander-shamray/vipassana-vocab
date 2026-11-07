@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 def run(playlist_url: str = paths.PLAYLIST, only: set[int] | None = None) -> list[Talk]:
     from yt_dlp import YoutubeDL  # heavy optional dependency
+    from yt_dlp.utils import DownloadError
 
     paths.AUDIO.mkdir(parents=True, exist_ok=True)
     with YoutubeDL({"extract_flat": "in_playlist", "quiet": True}) as ydl:
@@ -30,9 +31,16 @@ def run(playlist_url: str = paths.PLAYLIST, only: set[int] | None = None) -> lis
                 "outtmpl": str(paths.AUDIO / "%(id)s.%(ext)s"),
                 "quiet": True,
             }
-            with YoutubeDL(opts) as ydl:
-                ydl.download([f"https://www.youtube.com/watch?v={vid}"])
-        audio = next(paths.AUDIO.glob(f"{vid}.*"))
+            try:
+                with YoutubeDL(opts) as ydl:
+                    ydl.download([f"https://www.youtube.com/watch?v={vid}"])
+            except DownloadError as e:  # one video must not stop the rest
+                log.error("talk %d (%s) skipped: %s", n, vid, e)
+                continue
+        audio = next(paths.AUDIO.glob(f"{vid}.*"), None)
+        if audio is None:
+            log.error("talk %d (%s) skipped: no audio file after download", n, vid)
+            continue
         talks.append(
             Talk(talk=n, video_id=vid, title=entry.get("title", ""), audio=str(audio.relative_to(paths.ROOT)))
         )
