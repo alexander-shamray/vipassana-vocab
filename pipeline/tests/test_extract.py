@@ -123,3 +123,73 @@ def test_plausible():
 def test_pali_ipa():
     assert gl.pali_ipa("paññā") == "pɐɲɲaː"
     assert gl.pali_ipa("dukkha") == "dʊkkʰɐ"
+
+
+def test_quotes_use_the_glossary_spelling_of_pali():
+    g = gl.index(
+        [
+            Term("sila", "sīla", [], "pali", ["нравственность"], False, misheard=["sheila"]),
+            Term(
+                "samma-vaca", "sammā-vācā", [], "pali", ["правильная речь"], False, misheard=["samma vacha"]
+            ),
+            Term("sensation", "sensation", ["sensations"], "en", ["ощущение"], False),
+        ]
+    )
+    out = run(
+        [transcript(seg(" Sheila is morality, samma vacha too. Observe sensations."))], g, fake_analyzer
+    )
+    assert out["sila"].occurrences[0].sentence == "Sīla is morality, sammā-vācā too."
+    assert out["samma-vaca"].freq == 1
+    # English terms keep the spoken form.
+    assert out["sensation"].occurrences[0].sentence == "Observe sensations."
+
+
+def test_respell_adds_diacritics_and_keeps_capitals():
+    g = gl.index(
+        [
+            Term("samadhi", "samādhi", [], "pali", ["сосредоточение"], False),
+            Term("dhamma", "Dhamma", [], "pali", ["Дхамма"], False),
+            Term("samma-vaca", "sammā-vācā", [], "pali", ["правильная речь"], False),
+        ]
+    )
+    assert g.respell("Samadhi and dhamma, samma vaca.") == "Samādhi and Dhamma, sammā-vācā."
+    assert g.respell("Buddhas teach.") == "Buddhas teach."
+
+
+RESPELL = gl.index(
+    [
+        Term("dhamma", "Dhamma", ["dharma"], "pali", ["Дхамма"], False),
+        Term("sankhara", "saṅkhāra", ["samskara"], "pali", ["санкхара"], False, misheard=["sankara"]),
+        Term("nama-rupa", "nāma-rūpa", [], "pali", ["ум и материя"], False),
+        Term("parami", "pāramī", [], "pali", ["парами"], False, misheard=["parmi"]),
+    ]
+)
+
+
+def test_respell_keeps_forms_said_on_purpose():
+    assert (
+        RESPELL.respell("In Sanskrit it is dharma, in Pali dhamma.")
+        == "In Sanskrit it is dharma, in Pali Dhamma."
+    )
+    assert RESPELL.respell("samskara") == "samskara"
+
+
+def test_respell_keeps_english_plurals():
+    assert RESPELL.respell("These sankharas, those sankaras.") == "These saṅkhāras, those saṅkhāras."
+    assert RESPELL.respell("The ten parmis.") == "The ten pāramīs."
+
+
+def test_respell_never_swallows_a_comma():
+    assert RESPELL.respell("Nama, rupa, vedana.") == "Nama, rupa, vedana."
+    assert RESPELL.respell("nama-rupa and nama rupa") == "nāma-rūpa and nāma-rūpa"
+
+
+def test_phrase_is_not_counted_across_a_comma():
+    out = run([transcript(seg(" Nama, rupa: both change. Then nama rupa again."))], RESPELL, fake_analyzer)
+    assert out["nama-rupa"].freq == 1
+
+
+def test_run_together_mishearing_of_a_compound_is_respelled():
+    g = gl.index([Term("u-ba-khin", "U Ba Khin", [], "pali", ["У Ба Кхин"], False, misheard=["ubakhin"])])
+    assert g.respell("My teacher Ubakhin.") == "My teacher U Ba Khin."
+    assert g.respell("Khin alone.") == "Khin alone."

@@ -70,6 +70,7 @@ def test_ssml_voices_ipa_and_escaping():
 def test_kokoro_spec_and_phonemes():
     assert tts.kokoro_phonemes("sɐmaːdʱɪ") == "ˈsɐmaːdʰɪ"  # ʱ is not in Kokoro's set
     assert tts.kokoro_phonemes("ˈsiːlɐ") == "ˈsiːlɐ"
+    assert tts.kokoro_phonemes("sɐɭaːjɐtɐnɐ") == "ˈsɐlaːjɐtɐnɐ"  # no ɭ in Kokoro
     assert tts.spec("paññā", "pali", "pɐɲɲaː", "kokoro") == "kokoro|hm_omega|ps|ˈpɐɲɲaː"
     assert tts.spec("suffer", "en", None, "kokoro") == "kokoro|bm_george|text|suffer"
     assert tts.spec("suffer", "en", None, "azure") == ssml("suffer", "en", None)
@@ -94,3 +95,8 @@ def test_voice_follows_language_not_ipa():
     # An English glossary term with an IPA fix keeps the English voice.
     assert tts.spec("Dhamma", "en", "dʱɐmmɐ", "kokoro").startswith("kokoro|bm_george|ps|")
     assert tts.spec("paññā", "pali", None, "kokoro") == "kokoro|hm_omega|text|paññā"
+
+
+def test_pali_ipa_short_vowel_before_double_consonant():
+    assert gl.pali_ipa("mettā") == "mettaː"
+    assert gl.pali_ipa("vedanā") == "ʋeːdɐnaː"
