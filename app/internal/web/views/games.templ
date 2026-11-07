@@ -82,7 +82,7 @@ templ WriteResults(results []WriteResult) {
 
 // missed is a wrong word: one click sends it to the important list.
 templ missed(key, lemma string) {
-	<form method="post" action={ templ.URL("/games/important/" + key) } hx-post={ "/games/important/" + key } hx-swap="outerHTML" class="act">
+	<form method="post" action={ templ.URL(importantPath(key)) } hx-post={ importantPath(key) } hx-swap="outerHTML" class="act">
 		<button type="submit" class="wrong" title="Отправить в «Важные»">{ lemma }</button>
 	</form>
 }

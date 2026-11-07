@@ -14,8 +14,14 @@
   const show = (id, on) => { $(id).hidden = !on; };
 
   let index = -1;
+  let round = 0; // bumped by every ask and every grade: stale awaits bail out
   let current = null; // the running recognition, if any
+  let audio = null; // the prompt being played, if any
+  let typing = !Recognition; // no recognition, or the microphone failed
   const wrong = [];
+
+  // Recognition errors after which listening again is pointless.
+  const fatal = new Set(["not-allowed", "service-not-allowed", "audio-capture", "network", "language-not-supported"]);
 
   if (!Recognition) show("no-mic", true);
 
@@ -31,22 +37,31 @@
     });
   }
 
-  // Some browsers never fire "end" (no voices, blocked audio): give up
-  // waiting after a few seconds rather than freezing the game.
-  const atMost = (ms, p) => Promise.race([p, new Promise((done) => setTimeout(done, ms))]);
-
-  function sayPrompt(item) {
-    if (!item.audio) return atMost(6000, speakText(item));
-    return atMost(6000, new Promise((done) => {
-      const a = new Audio(item.audio);
-      a.onended = done;
-      a.onerror = () => speakText(item).then(done);
-      a.play().catch(() => speakText(item).then(done));
-    }));
+  function stopPrompt() {
+    if (audio) { audio.pause(); audio = null; }
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
   }
 
-  // Resolves with the recognised alternatives, [] for silence, or null when
-  // cancelled by "repeat".
+  // Some browsers never fire "end" (no voices, blocked audio): stop the
+  // prompt and move on after a limit that grows with the text, so the
+  // microphone never opens over the site's own voice.
+  function sayPrompt(item) {
+    const my = round; // a late timer of an old prompt must not stop a new one
+    const limit = 4000 + 120 * item.say.length;
+    const playing = item.audio
+      ? new Promise((done) => {
+        audio = new Audio(item.audio);
+        audio.onended = done;
+        audio.onerror = () => speakText(item).then(done);
+        audio.play().catch(() => speakText(item).then(done));
+      })
+      : speakText(item);
+    return Promise.race([playing, new Promise((done) => setTimeout(done, limit))])
+      .then(() => { if (my === round) stopPrompt(); });
+  }
+
+  // Resolves with {heard, error}: the recognised alternatives and the
+  // recognition error code, if any; or null when cancelled.
   function listen() {
     return new Promise((done) => {
       const r = new Recognition();
@@ -54,12 +69,26 @@
       r.maxAlternatives = 5;
       r.interimResults = false;
       let heard = [];
+      let error = "";
       r.onresult = (e) => { heard = Array.from(e.results[0], (alt) => alt.transcript); };
-      r.onend = () => { if (current === r) { current = null; done(heard); } else done(null); };
+      r.onerror = (e) => { error = e.error || "unknown"; };
+      r.onend = () => { if (current === r) { current = null; done({ heard, error }); } else done(null); };
       current = r;
       $("status").textContent = "🎤 Говорите…";
-      r.start();
+      try {
+        r.start();
+      } catch (e) {
+        current = null;
+        done({ heard: [], error: "not-allowed" });
+      }
     });
+  }
+
+  function askTyped() {
+    $("status").textContent = "Введите ответ";
+    show("typed", true);
+    $("typed-input").value = "";
+    $("typed-input").focus();
   }
 
   function cancelListening() {
@@ -85,21 +114,29 @@
     show("next", false);
     show("repeat", true);
     show("skip", true);
+    show("typed", false);
+    const my = ++round;
     $("status").textContent = "🔊 Слушайте…";
     await sayPrompt(item);
-    if (!Recognition) {
-      $("status").textContent = "Введите ответ";
-      show("typed", true);
-      $("typed-input").value = "";
-      $("typed-input").focus();
+    if (my !== round) return; // skipped or repeated meanwhile
+    if (typing) return askTyped();
+    const res = await listen();
+    if (res === null || my !== round) return;
+    if (fatal.has(res.error)) {
+      typing = true;
+      $("no-mic").textContent = "Микрофон недоступен (нет разрешения или устройства) — отвечайте текстом.";
+      show("no-mic", true);
+      return askTyped();
+    }
+    if (res.heard.length === 0 && res.error) {
+      $("status").textContent = "Ничего не слышно — нажмите «Повторить» или «Не знаю».";
       return;
     }
-    const answers = await listen();
-    if (answers === null) return; // repeat started a new round
-    await grade(item, answers);
+    await grade(item, res.heard);
   }
 
   async function grade(item, answers) {
+    round += 1; // an answer closes the round: late awaits from it must not act
     show("repeat", false);
     show("skip", false);
     show("typed", false);
@@ -174,8 +211,8 @@
     }
     next();
   });
-  $("repeat").addEventListener("click", () => { cancelListening(); ask(); });
-  $("skip").addEventListener("click", () => { cancelListening(); grade(items[index], []); });
+  $("repeat").addEventListener("click", () => { stopPrompt(); cancelListening(); ask(); });
+  $("skip").addEventListener("click", () => { stopPrompt(); cancelListening(); grade(items[index], []); });
   $("next").addEventListener("click", next);
   $("typed").addEventListener("submit", (e) => {
     e.preventDefault();

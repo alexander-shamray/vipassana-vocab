@@ -73,6 +73,8 @@ type WordPage struct {
 	Examples []Quote
 }
 
+func importantPath(key string) string { return "/games/important/" + url.PathEscape(key) }
+
 func wordPath(key, action string) string {
 	p := "/words/" + url.PathEscape(key)
 	if action != "" {

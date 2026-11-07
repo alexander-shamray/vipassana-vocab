@@ -14,7 +14,26 @@ import (
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/web/views"
 )
 
-const gameSize = 10
+const (
+	gameSize      = 10
+	maxFormBytes  = 8 << 10 // ten answers fit many times over
+	maxAnswerRune = 200
+)
+
+// parseGameForm reads a small form; answers longer than maxAnswerRune are cut.
+func parseGameForm(w http.ResponseWriter, r *http.Request) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return false
+	}
+	for i, a := range r.PostForm["answer"] {
+		if rs := []rune(a); len(rs) > maxAnswerRune {
+			r.PostForm["answer"][i] = string(rs[:maxAnswerRune])
+		}
+	}
+	return true
+}
 
 const (
 	modeListen = "listen" // hear English, say Russian
@@ -93,8 +112,7 @@ func (s *server) writeCheck(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
+	if !parseGameForm(w, r) {
 		return
 	}
 	keys, answers := r.PostForm["key"], r.PostForm["answer"]
@@ -172,8 +190,7 @@ func (s *server) speechCheck(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.player(w, r); !ok {
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
+	if !parseGameForm(w, r) {
 		return
 	}
 	e, found := s.byKey[r.PostForm.Get("key")]

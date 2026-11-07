@@ -449,9 +449,9 @@ func missed(key, lemma string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.URL("/games/important/" + key)).ResolveURL(ctx)
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.URL(importantPath(key))).ResolveURL(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/games.templ`, Line: 85, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/games.templ`, Line: 85, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
@@ -462,9 +462,9 @@ func missed(key, lemma string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templruntime.NewAttributeExpression("/games/important/" + key).Resolve(ctx)
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templruntime.NewAttributeExpression(importantPath(key)).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/games.templ`, Line: 85, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/games.templ`, Line: 85, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {

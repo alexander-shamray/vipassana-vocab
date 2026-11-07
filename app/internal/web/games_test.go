@@ -125,6 +125,19 @@ func TestSpeechCheck(t *testing.T) {
 	}
 }
 
+func TestGameForms_Bounded(t *testing.T) {
+	f := newFixture(t)
+	long := strings.Repeat("я", 300)
+	_, body := f.post(t, "/games/write", 1, url.Values{"key": {"breath"}, "answer": {long}}, true)
+	if strings.Contains(body, strings.Repeat("я", maxAnswerRune+1)) || !strings.Contains(body, strings.Repeat("я", maxAnswerRune)) {
+		t.Error("an answer must be cut to maxAnswerRune runes")
+	}
+	huge := url.Values{"key": {"breath"}, "mode": {"listen"}, "answer": {strings.Repeat("a", maxFormBytes)}}
+	if code, _ := f.post(t, "/games/check", 1, huge, false); code != http.StatusBadRequest {
+		t.Errorf("oversized form = %d, want 400", code)
+	}
+}
+
 func TestSpeechGame_Items(t *testing.T) {
 	f := newFixture(t)
 	_, body, _ := f.do(t, req{path: "/games/speak", user: 1})
