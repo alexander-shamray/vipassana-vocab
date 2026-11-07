@@ -27,3 +27,6 @@ Thumbs.db
 # Fetched from private R2 at deploy time; copyrighted quotes stay out of git
 dictionary/examples.jsonl
 .playwright-mcp/
+
+# pip install -e metadata
+*.egg-info/

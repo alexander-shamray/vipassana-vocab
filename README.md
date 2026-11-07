@@ -48,5 +48,5 @@ cd app && go vet ./... && go test ./...
 cd pipeline && pip install -e ".[dev]" && ruff check . && pytest
 ```
 
-После правки `*.templ`: `go run github.com/a-h/templ/cmd/templ generate` (сгенерированные
+После правки `*.templ`: `go tool templ generate` (сгенерированные
 `*_templ.go` коммитятся, CI проверяет, что они актуальны).
