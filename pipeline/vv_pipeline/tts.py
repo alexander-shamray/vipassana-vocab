@@ -44,9 +44,9 @@ def ssml(text: str, lang: str, ipa: str | None) -> str:
 
 
 def kokoro_phonemes(ipa: str) -> str:
-    """Our Pali IPA in Kokoro's phoneme set: it has ʰ but not breathy ʱ
-    (unknown symbols are silently dropped), and wants a stress mark."""
-    ps = ipa.replace("ʱ", "ʰ")
+    """Our Pali IPA in Kokoro's phoneme set: it has ʰ but not breathy ʱ, and
+    no retroflex ɭ (unknown symbols are silently dropped); it wants a stress mark."""
+    ps = ipa.replace("ʱ", "ʰ").replace("ɭ", "l")
     return ps if ps.startswith(("ˈ", "ˌ")) else "ˈ" + ps
 
 

@@ -3,4 +3,34 @@
 #   some-junk: {drop: true}                 # remove from the dictionary entirely
 #   gonna: {merge_into: go}                 # fold forms and counts into another word
 #   observe: {ru: [наблюдать, замечать]}    # replace the translation (marks it reviewed)
-{}
+
+# spaCy lemmatised a plural by cutting one letter too many.
+hatre: {merge_into: hatred}
+goddesse: {merge_into: goddess}
+establishe: {merge_into: establish}
+purifie: {merge_into: purify}
+impuritie: {merge_into: impurity}
+blis: {merge_into: bliss}
+monast: {merge_into: monastery}
+# Whisper misspellings of words that are in the dictionary.
+viscissitude: {merge_into: vicissitude}
+refilement: {merge_into: defilement}
+simology: {merge_into: swimology}
+goinka: {merge_into: goenka}
+goinkaji: {merge_into: goenka}
+goenkaaji: {merge_into: goenka}
+# Heard once and misspelled, with no correct form to merge into.
+molasse: {drop: true}
+chilie: {drop: true}
+abdoman: {drop: true}
+gorgion: {drop: true}   # "Gordian knots" (checked against the Day 1 human transcript)
+# Unintelligible: neither English nor recognisable Pali in context.
+mahalopani: {drop: true}
+mitocine: {drop: true}
+genjis: {drop: true}
+pasico: {drop: true}
+khaji: {drop: true}
+tamma: {drop: true}
+nityan: {drop: true}
+sambhavan: {drop: true}
+choom: {drop: true}     # the hiss of water on hot charcoal in a story

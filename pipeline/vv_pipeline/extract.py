@@ -1,16 +1,18 @@
 """Turn transcripts into lemmas: forms, frequencies and the sentences they occur in."""
 
+import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 from . import segments
-from .glossary import Glossary
+from .glossary import PHRASE_GAP, Glossary
 from .models import Lemma, Occ
 from .textnorm import fold, key
 
 SKIP_POS = {"NUM", "PUNCT", "SPACE", "SYM", "X"}
 VOWELS = set("aeiouy")
 LEAD_SECONDS = 2  # start a link a little before the word
+_GAP = re.compile(PHRASE_GAP)
 
 
 @dataclass
@@ -87,12 +89,19 @@ def _segment(
             best = t
         return best
 
+    quotes: dict[tuple[int, int], str] = {}
+
+    def quote(a: int, b: int) -> str:
+        if (a, b) not in quotes:  # respell each sentence once, not once per word
+            quotes[(a, b)] = glossary.respell(" ".join(text[a:b].split()))
+        return quotes[(a, b)]
+
     def sentence_at(idx: int) -> tuple[str, float]:
         for a, b in doc.sents:
             if a <= idx < b:
                 a += len(text[a:b]) - len(text[a:b].lstrip())  # time of the first word, not the gap
-                return glossary.respell(" ".join(text[a:b].split())), when(a)
-        return glossary.respell(" ".join(text.split())), seg["start"]
+                return quote(a, b), when(a)
+        return quote(0, len(text)), seg["start"]
 
     def add(k: str, lemma: str, lang: str, pos: str, form: str, idx: int, is_term: bool) -> None:
         lm = lemmas.get(k)
@@ -105,7 +114,13 @@ def _segment(
             Occ(talk=talk, video_id=video_id, t=max(0, int(t) - LEAD_SECONDS), sentence=sent)
         )
 
-    # Word tokens only, so phrases match across hyphens and stray punctuation.
+    def joined(a: Tok, b: Tok) -> bool:
+        """Only spaces or hyphens between two words of a phrase, as in respell."""
+        end = a.idx + a.text.find(clean(a.text)) + len(clean(a.text))
+        start = b.idx + b.text.find(clean(b.text))
+        return _GAP.fullmatch(text[end:start]) is not None
+
+    # Word tokens only; phrases may span hyphens but not commas or stops.
     toks = [t for t in doc.toks if clean(t.text) and clean(t.text)[0].isalpha()]
     folded = [fold(clean(t.text)) for t in toks]
     used = [False] * len(toks)
@@ -113,7 +128,11 @@ def _segment(
     for words_, term in glossary.phrases:
         n = len(words_)
         for i in range(len(toks) - n + 1):
-            if not any(used[i : i + n]) and tuple(folded[i : i + n]) == words_:
+            if (
+                not any(used[i : i + n])
+                and tuple(folded[i : i + n]) == words_
+                and all(joined(toks[j], toks[j + 1]) for j in range(i, i + n - 1))
+            ):
                 form = " ".join(clean(t.text) for t in toks[i : i + n]).lower()
                 add(term.key, term.display, term.lang, "NOUN", form, toks[i].idx, True)
                 for j in range(i, i + n):

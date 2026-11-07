@@ -48,6 +48,9 @@ class Term:
     reviewed: bool
     ipa: str | None = None
     note: str | None = None
+    # Spellings Whisper wrote for this Pali word; quotes are respelled.
+    # `variants` are forms said on purpose (Sanskrit "dharma") and stay.
+    misheard: list[str] = field(default_factory=list)
 
 
 @dataclass

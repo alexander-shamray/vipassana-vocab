@@ -26,25 +26,49 @@ class Glossary:
 
         Whisper writes what it hears ("Sheila", "parmi", "samma vacha"); the
         site quotes the talks, so a misheard Pali word is shown as "sīla".
+        Forms said on purpose (Sanskrit "dharma", English "karma") and
         English (dhamma.yaml) terms are left as spoken.
         """
         for words, term in self.phrases:
-            if term.lang != "pali":
+            if term.lang != "pali" or not _respellable(term, " ".join(words)):
                 continue
-            pattern = r"\b" + r"[\s,-]+".join(re.escape(w) for w in words) + r"\b"
+            pattern = r"\b" + PHRASE_GAP.join(re.escape(w) for w in words) + r"\b"
             text = re.sub(pattern, lambda m, t=term: _cased(t.display, m.group(0)), text, flags=re.IGNORECASE)
 
         def one(m: re.Match) -> str:
             word = m.group(0)
-            term = self.single.get(fold(word))
-            if term is None or term.lang != "pali" or " " in term.display or "-" in term.display:
-                return word  # a lone word of a compound stays as spoken
-            return _cased(term.display, word)
+            spoken = fold(word)
+            term = self.single.get(spoken) or self.single.get(spoken.removesuffix("s"))
+            if term is None or term.lang != "pali" or not _respellable(term, spoken):
+                return word
+            if (" " in term.display or "-" in term.display) and spoken not in {
+                fold(m) for m in term.misheard
+            }:
+                return word  # a lone word of a compound stays, unless it is a known run-together mishearing
+            return _cased(_plural(term.display, word), word)
 
         return _WORD.sub(one, text)
 
 
 _WORD = re.compile(r"[^\W\d_]+")
+# What may stand between the words of a phrase term, in extract and respell
+# alike: spaces and hyphens, never a comma or a full stop.
+PHRASE_GAP = r"[\s-]+"
+
+
+def _respellable(term: Term, spoken: str) -> bool:
+    """The display spelling with or without diacritics or an English plural,
+    or a known mishearing (also plural) — not a form said on purpose."""
+    base = fold(term.display).replace("-", " ")
+    misheard = {fold(m).replace("-", " ") for m in term.misheard}
+    return spoken in (base, base + "s") or spoken in misheard or spoken.removesuffix("s") in misheard
+
+
+def _plural(display: str, spoken: str) -> str:
+    """Keep an English plural the speaker used: "sankharas" -> "saṅkhāras"."""
+    if fold(spoken).endswith("s") and not fold(display).endswith("s"):
+        return display + "s"
+    return display
 
 
 def _cased(display: str, spoken: str) -> str:
@@ -69,7 +93,7 @@ def index(terms: list[Term]) -> Glossary:
     single: dict[str, Term] = {}
     phrases: list[tuple[tuple[str, ...], Term]] = []
     for t in terms:
-        for spelling in {t.display, *t.variants}:
+        for spelling in {t.display, *t.variants, *t.misheard}:
             words = tuple(fold(spelling).replace("-", " ").split())
             if len(words) == 1:
                 single[words[0]] = t
@@ -90,6 +114,7 @@ def _term(raw: dict, lang: Lang) -> Term:
         reviewed=bool(raw.get("reviewed", False)),
         ipa=raw.get("ipa") or (pali_ipa(display) if lang == "pali" else None),
         note=raw.get("note"),
+        misheard=list(raw.get("misheard") or []),
     )
 
 
@@ -148,6 +173,11 @@ def pali_ipa(text: str) -> str:
     out: list[str] = []
     i = 0
     while i < len(s):
+        # e and o are short before a double consonant (mettā, sotthi).
+        if s[i] in "eo" and i + 2 < len(s) and s[i + 1] == s[i + 2] and s[i + 1].isalpha():
+            out.append(s[i])
+            i += 1
+            continue
         for src, dst in _PALI_IPA:
             if s.startswith(src, i):
                 out.append(dst)
