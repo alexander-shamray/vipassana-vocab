@@ -1,0 +1,146 @@
+package views
+
+import "strconv"
+
+templ GamesMenu(userName string) {
+	@Layout("Игры", "games", true, userName) {
+		<h1>Игры</h1>
+		<p class="hint">По 10 случайных слов из «Словаря» и «Важных». Слова с ошибкой можно одним нажатием отправить в «Важные».</p>
+		<ul class="games">
+			<li><a class="btn game" href="/games/write"><b>Напишите перевод</b><span>10 английских слов — впишите русский перевод</span></a></li>
+			<li><a class="btn game" href="/games/listen"><b>Слушайте и переводите</b><span>Сайт говорит по-английски — вы отвечаете вслух по-русски</span></a></li>
+			<li><a class="btn game" href="/games/speak"><b>Скажите по-английски</b><span>Сайт говорит по-русски — вы отвечаете вслух по-английски</span></a></li>
+		</ul>
+	}
+}
+
+templ WriteGame(userName string, rows []Row) {
+	@Layout("Напишите перевод", "games", true, userName) {
+		<p><a href="/games" class="back">← к играм</a></p>
+		<h1>Напишите перевод</h1>
+		<div id="game">
+			if len(rows) == 0 {
+				<p class="hint">Не осталось слов с переводом: все выучены.</p>
+			} else {
+				<form method="post" action="/games/write" hx-post="/games/write" hx-target="#game" hx-swap="innerHTML" class="write-game">
+					<ol class="quiz">
+						for i, r := range rows {
+							<li>
+								<label for={ "a" + strconv.Itoa(i) }>
+									<span class={ "lemma", templ.KV("pali", r.Entry.Lang == "pali") }>{ r.Entry.Lemma }</span>
+								</label>
+								@say(r)
+								<input type="hidden" name="key" value={ r.Entry.Key }/>
+								<input id={ "a" + strconv.Itoa(i) } name="answer" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="перевод"/>
+							</li>
+						}
+					</ol>
+					<button type="submit" class="btn primary">Проверить</button>
+				</form>
+			}
+		</div>
+	}
+}
+
+templ WriteResultsPage(userName string, results []WriteResult) {
+	@Layout("Результат", "games", true, userName) {
+		<p><a href="/games" class="back">← к играм</a></p>
+		<h1>Напишите перевод</h1>
+		<div id="game">
+			@WriteResults(results)
+		</div>
+	}
+}
+
+templ WriteResults(results []WriteResult) {
+	<p class="score">Верно { strconv.Itoa(score(results)) } из { strconv.Itoa(len(results)) }</p>
+	if score(results) < len(results) {
+		<p class="hint">Нажмите на красное слово, чтобы отправить его в «Важные».</p>
+	}
+	<ol class="quiz results">
+		for _, r := range results {
+			if r.OK {
+				<li class="ok">
+					<span class="lemma">{ r.Row.Entry.Lemma }</span>
+					<span class="ru">{ meanings(r.Row.Entry) }</span>
+				</li>
+			} else {
+				<li class="bad">
+					@missed(r.Row.Entry.Key, r.Row.Entry.Lemma)
+					<span class="ru">{ meanings(r.Row.Entry) }</span>
+					if r.Answer != "" {
+						<span class="yours">ваш ответ: { r.Answer }</span>
+					} else {
+						<span class="yours">нет ответа</span>
+					}
+				</li>
+			}
+		}
+	</ol>
+	<p><a class="btn primary" href="/games/write">Ещё 10 слов</a></p>
+}
+
+// missed is a wrong word: one click sends it to the important list.
+templ missed(key, lemma string) {
+	<form method="post" action={ templ.URL(importantPath(key)) } hx-post={ importantPath(key) } hx-swap="outerHTML" class="act">
+		<button type="submit" class="wrong" title="Отправить в «Важные»">{ lemma }</button>
+	</form>
+}
+
+templ SentToImportant(lemma string) {
+	<span class="sent">★ { lemma } — в «Важных»</span>
+}
+
+templ SpeechGame(userName, mode, itemsJSON string) {
+	@Layout(speechTitle(mode), "games", true, userName) {
+		<p><a href="/games" class="back">← к играм</a></p>
+		<h1>{ speechTitle(mode) }</h1>
+		<div id="speech" class="speech" data-mode={ mode } data-items={ itemsJSON } data-answer-lang={ answerLang(mode) }>
+			<p class="hint">{ speechHint(mode) }</p>
+			<p id="no-mic" class="hint" hidden>Этот браузер не распознаёт речь (работает в Chrome, Edge и Safari) — отвечайте текстом.</p>
+			<div class="stage">
+				<span id="progress" class="progress"></span>
+				<p id="status" class="status"></p>
+				<p id="result" class="result" aria-live="polite"></p>
+			</div>
+			<form id="typed" class="typed" hidden>
+				<input id="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ваш ответ"/>
+				<button type="submit" class="btn">Ответить</button>
+			</form>
+			<div class="controls">
+				<button type="button" id="start" class="btn primary">Начать</button>
+				<button type="button" id="repeat" class="btn" hidden>🔁 Повторить</button>
+				<button type="button" id="skip" class="btn" hidden>Не знаю</button>
+				<button type="button" id="next" class="btn primary" hidden>Дальше</button>
+			</div>
+			<div id="summary" hidden>
+				<p id="score" class="score"></p>
+				<p class="hint" id="wrong-hint">Нажмите на красное слово, чтобы отправить его в «Важные».</p>
+				<ul id="wrong" class="quiz results"></ul>
+				<p><a class="btn primary" href={ templ.URL("/games/" + mode) }>Ещё 10 слов</a></p>
+			</div>
+		</div>
+		<script src={ asset("games.js") } defer></script>
+	}
+}
+
+func speechTitle(mode string) string {
+	if mode == "listen" {
+		return "Слушайте и переводите"
+	}
+	return "Скажите по-английски"
+}
+
+func speechHint(mode string) string {
+	if mode == "listen" {
+		return "Нажмите «Начать»: сайт произнесёт английское слово, затем скажите перевод по-русски. Микрофон включится сам."
+	}
+	return "Нажмите «Начать»: сайт произнесёт значение по-русски, затем скажите слово по-английски. Микрофон включится сам."
+}
+
+func answerLang(mode string) string {
+	if mode == "listen" {
+		return "ru-RU"
+	}
+	return "en-US"
+}

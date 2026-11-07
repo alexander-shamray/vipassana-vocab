@@ -9,6 +9,12 @@ import (
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/textnorm"
 )
 
+// AssetVersion is appended to static URLs (?v=…) so a deploy with new CSS
+// or JS is never hidden behind the browser cache. Set once at startup.
+var AssetVersion = "dev"
+
+func asset(path string) string { return "/static/" + path + "?v=" + AssetVersion }
+
 // Row is one word in a list.
 type Row struct {
 	Entry    dict.Entry
@@ -42,6 +48,23 @@ type Quote struct {
 	Link  string // YouTube at that second
 }
 
+// WriteResult is one graded answer of the writing game.
+type WriteResult struct {
+	Row    Row
+	Answer string
+	OK     bool
+}
+
+func score(rs []WriteResult) int {
+	n := 0
+	for _, r := range rs {
+		if r.OK {
+			n++
+		}
+	}
+	return n
+}
+
 // WordPage shows a word's forms and quotes.
 type WordPage struct {
 	Row      Row
@@ -49,6 +72,8 @@ type WordPage struct {
 	UserName string
 	Examples []Quote
 }
+
+func importantPath(key string) string { return "/games/important/" + url.PathEscape(key) }
 
 func wordPath(key, action string) string {
 	p := "/words/" + url.PathEscape(key)

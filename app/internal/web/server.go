@@ -2,16 +2,22 @@
 package web
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"embed"
+	"encoding/hex"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"sort"
+
+	"github.com/a-h/templ"
 
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/auth"
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/dict"
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/search"
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/textnorm"
+	"github.com/alexander-shamray/vipassana-vocab/app/internal/web/views"
 )
 
 //go:embed static
@@ -59,8 +65,10 @@ func New(d Deps) http.Handler {
 	mux.HandleFunc("GET /words/{key}", s.word)
 	mux.HandleFunc("GET /login", s.login)
 	mux.HandleFunc("GET /not-invited", s.notInvited)
+	s.gameRoutes(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })
 	static, _ := fs.Sub(staticFS, "static")
+	views.AssetVersion = contentHash(static)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheStatic(http.FileServerFS(static))))
 	if d.AuthRoutes != nil {
 		d.AuthRoutes(mux)
@@ -80,11 +88,40 @@ func securityHeaders(h http.Handler) http.Handler {
 	})
 }
 
+// contentHash fingerprints every static file, so the URL changes whenever
+// any of them does.
+func contentHash(fsys fs.FS) string {
+	h := sha256.New()
+	_ = fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := fs.ReadFile(fsys, p)
+		if err != nil {
+			return err
+		}
+		h.Write([]byte(p))
+		h.Write(b)
+		return nil
+	})
+	return hex.EncodeToString(h.Sum(nil))[:12]
+}
+
+// cacheStatic lets browsers keep versioned assets for a year.
 func cacheStatic(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		h.ServeHTTP(w, r)
 	})
+}
+
+// render writes an HTML component, logging (not reporting) late failures:
+// once the body has started there is no status code left to change.
+func (s *server) render(w http.ResponseWriter, r *http.Request, c templ.Component) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := c.Render(r.Context(), w); err != nil {
+		slog.Error("render", "path", r.URL.Path, "err", err)
+	}
 }
 
 func isHTMX(r *http.Request) bool { return r.Header.Get("HX-Request") == "true" }
