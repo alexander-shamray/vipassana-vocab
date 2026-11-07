@@ -16,6 +16,7 @@ import (
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/db"
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/dict"
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/search"
+	"github.com/alexander-shamray/vipassana-vocab/app/internal/web/views"
 )
 
 // testUserHeader stands in for a session in tests: its value is a user id.
@@ -280,6 +281,15 @@ func TestHighlight(t *testing.T) {
 	parts = Highlight("Observe mind and matter now", []string{"mind and matter"})
 	if len(parts) != 3 || !parts[1].Mark || parts[1].Text != "mind and matter" {
 		t.Errorf("phrase parts = %+v", parts)
+	}
+}
+
+func TestStaticURLsAreVersioned(t *testing.T) {
+	f := newFixture(t)
+	_, body, _ := f.do(t, req{path: "/"})
+	mustContain(t, body, "/static/app.css?v="+views.AssetVersion, "/static/app.js?v=")
+	if views.AssetVersion == "dev" || len(views.AssetVersion) != 12 {
+		t.Errorf("AssetVersion = %q, want a content hash", views.AssetVersion)
 	}
 }
 

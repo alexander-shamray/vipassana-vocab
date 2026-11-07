@@ -1,6 +1,7 @@
 package search
 
-// within is the plain DP edit distance, kept as a test oracle for Myers.
+// within is the plain DP edit distance: the fallback for long inputs and
+// the test oracle for Myers.
 // It returns the edit distance between a and b when it is at most max,
 // and -1 otherwise. It keeps one row of the DP table and gives up as soon as
 // every cell in a row exceeds max.

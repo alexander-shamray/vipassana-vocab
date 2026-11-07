@@ -10,9 +10,9 @@ templ Layout(title string, nav string, loggedIn bool, userName string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title } · Vipassana Vocab</title>
 			<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%238a5a12'/%3E%3C/svg%3E"/>
-			<link rel="stylesheet" href="/static/app.css"/>
-			<script src="/static/htmx.min.js" defer></script>
-			<script src="/static/app.js" defer></script>
+			<link rel="stylesheet" href={ asset("app.css") }/>
+			<script src={ asset("htmx.min.js") } defer></script>
+			<script src={ asset("app.js") } defer></script>
 		</head>
 		<body>
 			<header class="top">
@@ -20,6 +20,7 @@ templ Layout(title string, nav string, loggedIn bool, userName string) {
 					<a href="/" class={ templ.KV("on", nav == "main") }>Словарь</a>
 					<a href="/important" class={ templ.KV("on", nav == "important") }>Важные</a>
 					<a href="/hidden" class={ templ.KV("on", nav == "hidden") }>Выученные</a>
+					<a href="/games" class={ templ.KV("on", nav == "games") }>Игры</a>
 				</nav>
 				if loggedIn {
 					<form method="post" action="/logout" class="who">

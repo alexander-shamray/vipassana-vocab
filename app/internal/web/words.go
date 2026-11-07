@@ -152,17 +152,7 @@ func (s *server) mark(mark string) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		var err error
-		if mark == "" {
-			_, err = s.DB.ExecContext(r.Context(),
-				`DELETE FROM word_marks WHERE user_id = ? AND word_key = ?`, user.ID, key)
-		} else {
-			_, err = s.DB.ExecContext(r.Context(), `
-				INSERT INTO word_marks (user_id, word_key, mark) VALUES (?, ?, ?)
-				ON CONFLICT (user_id, word_key) DO UPDATE
-				SET mark = excluded.mark, marked_at = excluded.marked_at`, user.ID, key, mark)
-		}
-		if err != nil {
+		if err := s.setMark(r.Context(), user.ID, key, mark); err != nil {
 			serverError(w, err)
 			return
 		}
@@ -176,6 +166,19 @@ func (s *server) mark(mark string) http.HandlerFunc {
 		}
 		http.Redirect(w, r, back, http.StatusSeeOther)
 	}
+}
+
+// setMark sets a user's mark on a word; mark "" clears it.
+func (s *server) setMark(ctx context.Context, userID int64, key, mark string) error {
+	if mark == "" {
+		_, err := s.DB.ExecContext(ctx, `DELETE FROM word_marks WHERE user_id = ? AND word_key = ?`, userID, key)
+		return err
+	}
+	_, err := s.DB.ExecContext(ctx, `
+		INSERT INTO word_marks (user_id, word_key, mark) VALUES (?, ?, ?)
+		ON CONFLICT (user_id, word_key) DO UPDATE
+		SET mark = excluded.mark, marked_at = excluded.marked_at`, userID, key, mark)
+	return err
 }
 
 func (s *server) marksFor(ctx context.Context, userID int64) (map[string]string, error) {

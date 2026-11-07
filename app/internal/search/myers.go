@@ -56,3 +56,16 @@ func (p *pattern) distance(t []rune) int {
 	}
 	return score
 }
+
+// Distance is the Levenshtein distance between two already-folded strings.
+// a must be at most 64 runes; longer inputs fall back to the plain DP.
+func Distance(a, b string) int {
+	ra, rb := []rune(a), []rune(b)
+	if len(ra) == 0 {
+		return len(rb)
+	}
+	if len(ra) > 64 {
+		return within(ra, rb, len(ra)+len(rb))
+	}
+	return newPattern(ra).distance(rb)
+}
