@@ -59,7 +59,7 @@ func New(d Deps) http.Handler {
 	mux.HandleFunc("GET /words/{key}", s.word)
 	mux.HandleFunc("GET /login", s.login)
 	mux.HandleFunc("GET /not-invited", s.notInvited)
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })
 	static, _ := fs.Sub(staticFS, "static")
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheStatic(http.FileServerFS(static))))
 	if d.AuthRoutes != nil {

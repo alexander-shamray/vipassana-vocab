@@ -61,7 +61,7 @@ func New(entries []dict.Entry) *Index {
 		for _, m := range e.RU {
 			add(m)
 			for _, w := range strings.FieldsFunc(m, func(r rune) bool {
-				return !(r == '-' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= 0x400 && r <= 0x4FF)
+				return r != '-' && (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < 0x400 || r > 0x4FF)
 			}) {
 				add(w)
 			}

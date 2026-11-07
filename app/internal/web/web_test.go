@@ -176,7 +176,9 @@ func TestMarks_RepeatedHideIsIdempotent(t *testing.T) {
 		}
 	}
 	var n int
-	f.db.QueryRow(`SELECT COUNT(*) FROM word_marks WHERE user_id = 1`).Scan(&n)
+	if err := f.db.QueryRow(`SELECT COUNT(*) FROM word_marks WHERE user_id = 1`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
 	if n != 1 {
 		t.Errorf("marks = %d, want 1", n)
 	}
