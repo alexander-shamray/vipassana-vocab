@@ -1,7 +1,10 @@
 """Transcribe each talk with word timestamps (faster-whisper on the local GPU)."""
 
+import importlib.util
 import json
 import logging
+import os
+from pathlib import Path
 
 from . import paths
 from .models import Talk, Term
@@ -16,7 +19,22 @@ def initial_prompt(terms: list[Term]) -> str:
     return "Vipassana meditation discourse by S. N. Goenka. Terms: " + ", ".join(words) + "."
 
 
+def use_pip_cuda() -> None:
+    """Put the CUDA DLLs of the nvidia-* pip wheels (cuBLAS, cuDNN) on PATH.
+
+    On Windows CTranslate2 finds them only through PATH; without this the
+    first GPU call fails unless CUDA 12 and cuDNN 9 are installed system-wide.
+    """
+    spec = importlib.util.find_spec("nvidia")
+    if os.name != "nt" or spec is None or not spec.submodule_search_locations:
+        return
+    for base in spec.submodule_search_locations:
+        for bin_dir in sorted(Path(base).glob("*/bin")):
+            os.environ["PATH"] = str(bin_dir) + os.pathsep + os.environ.get("PATH", "")
+
+
 def run(talks: list[Talk], terms: list[Term], model_name: str = "large-v3") -> None:
+    use_pip_cuda()
     from faster_whisper import WhisperModel, decode_audio  # heavy optional dependency
 
     paths.TRANSCRIPTS.mkdir(parents=True, exist_ok=True)
@@ -38,7 +56,6 @@ def run(talks: list[Talk], terms: list[Term], model_name: str = "large-v3") -> N
         )
         result = []
         for s in segments:
-            lang, prob = detect(model, audio, s.start, s.end)
             result.append(
                 {
                     "start": s.start,
@@ -46,8 +63,6 @@ def run(talks: list[Talk], terms: list[Term], model_name: str = "large-v3") -> N
                     "text": s.text,
                     "avg_logprob": s.avg_logprob,
                     "no_speech_prob": s.no_speech_prob,
-                    "language": lang,
-                    "language_prob": prob,
                     "words": [
                         {"word": w.word, "start": w.start, "end": w.end, "probability": w.probability}
                         for w in (s.words or [])
@@ -60,14 +75,6 @@ def run(talks: list[Talk], terms: list[Term], model_name: str = "large-v3") -> N
             ),
             encoding="utf-8",
         )
-
-
-def detect(model, audio, start: float, end: float) -> tuple[str, float]:
-    """Language of one segment, so sung Hindi and chanting can be dropped later."""
-    a, b = int(start * SAMPLE_RATE), int(end * SAMPLE_RATE)
-    clip = audio[a : max(b, a + SAMPLE_RATE)]  # at least one second
-    lang, prob, _ = model.detect_language(clip)
-    return lang, float(prob)
 
 
 def load_all() -> list[dict]:

@@ -99,8 +99,9 @@ def test_punctuation_and_quotes_are_cleaned():
     assert "bhavatu" not in out  # proper noun seen once
 
 
-def test_non_english_segment_is_ignored():
-    out = run([transcript(seg(" Jaise jaise samjhega", language="hi"))], GLOSS, fake_analyzer)
+def test_unsure_segment_is_ignored():
+    # Sung Hindi forced through the English decoder comes out unsure.
+    out = run([transcript(seg(" Jaise jaise samjhega", avg_logprob=-1.2))], GLOSS, fake_analyzer)
     assert out == {}
 
 
