@@ -120,6 +120,14 @@ func dev(ctx context.Context, getenv func(string) string) error {
 		"DEV_LOGIN":      "dev@localhost",
 		"ALLOWED_EMAILS": "",
 	}
+	// Pronunciations made locally by the pipeline (`--tts kokoro`) are
+	// served from disk, so the dev site plays them without any bucket.
+	if getenv("AUDIO_BASE_URL") == "" {
+		if fi, err := os.Stat(localAudioDir); err == nil && fi.IsDir() {
+			defaults["LOCAL_AUDIO_DIR"] = localAudioDir
+			defaults["AUDIO_BASE_URL"] = localAudioPrefix
+		}
+	}
 	env := func(k string) string {
 		if v := getenv(k); v != "" {
 			return v
@@ -154,6 +162,19 @@ func dev(ctx context.Context, getenv func(string) string) error {
 	}
 	slog.Info("dev server", "url", cfg.BaseURL, "login", cfg.DevLogin)
 	return serve(ctx, env, ln)
+}
+
+const (
+	localAudioDir    = "../data/audio_tts"
+	localAudioPrefix = "/audio"
+)
+
+// withLocalAudio serves the mp3 files of dir under /audio/ next to the site.
+func withLocalAudio(site http.Handler, dir string) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("GET "+localAudioPrefix+"/", http.StripPrefix(localAudioPrefix+"/", http.FileServer(http.Dir(dir))))
+	mux.Handle("/", site)
+	return mux
 }
 
 // serve runs the site until ctx is cancelled. ln is for tests; nil listens
@@ -202,6 +223,11 @@ func serve(ctx context.Context, getenv func(string) string, ln net.Listener) err
 		AudioBaseURL: cfg.AudioBaseURL,
 		AuthRoutes:   a.Routes,
 	})
+
+	if dir := getenv("LOCAL_AUDIO_DIR"); dir != "" {
+		handler = withLocalAudio(handler, dir)
+		slog.Info("serving local pronunciations", "dir", dir, "at", localAudioPrefix)
+	}
 
 	srv := &http.Server{
 		Handler:           sm.LoadAndSave(handler),

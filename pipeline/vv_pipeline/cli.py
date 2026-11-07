@@ -15,6 +15,12 @@ def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="vv_pipeline", description=__doc__)
     p.add_argument("steps", nargs="+", choices=[*STEPS, "build", "all"])
     p.add_argument("--only", help="comma-separated talk numbers, e.g. 1,2 (fetch/transcribe)")
+    p.add_argument(
+        "--tts",
+        choices=tts.ENGINES,
+        default=tts.DEFAULT_ENGINE,
+        help="pronunciation engine: kokoro (local GPU, default) or azure (needs AZURE_SPEECH_*)",
+    )
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -32,10 +38,10 @@ def main(argv: list[str] | None = None) -> None:
         _save_lemmas(lemmas)
     # Translation, TTS and the build always work from the saved lemmas.
     if {"translate", "build", "tts", "upload"} & set(steps) or "all" in args.steps:
-        _build(gloss, steps)
+        _build(gloss, steps, args.tts)
 
 
-def _build(gloss, steps) -> None:
+def _build(gloss, steps, engine: str) -> None:
     from spacy.lang.en.stop_words import STOP_WORDS
 
     overrides = build.load_overrides()
@@ -50,11 +56,11 @@ def _build(gloss, steps) -> None:
         if client
         else {k: v for k, v in translate._load(paths.TRANSLATIONS).items()}
     )
-    rows = build.entries(lemmas, translations, gloss, overrides)
+    rows = build.entries(lemmas, translations, gloss, overrides, engine)
     build.write(rows, examples.choose(lemmas, set(STOP_WORDS)))
     logging.info("wrote %d words to %s", len(rows), paths.WORDS)
     if "tts" in steps:
-        tts.run(rows, {t.key: t.ipa for t in gloss})
+        tts.run(rows, {t.key: t.ipa for t in gloss}, engine)
     if "upload" in steps:
         upload.run()
 

@@ -7,11 +7,10 @@ from pathlib import Path
 
 import yaml
 
-from . import paths
+from . import paths, tts
 from .glossary import Glossary
 from .models import Example, Lemma, Translation
 from .textnorm import fold
-from .tts import ssml
 
 
 def load_overrides(path: Path = paths.OVERRIDES / "words.yaml") -> dict[str, dict]:
@@ -41,6 +40,7 @@ def entries(
     translations: dict[str, Translation],
     glossary: Glossary,
     overrides: dict[str, dict],
+    engine: str = tts.DEFAULT_ENGINE,
 ) -> list[dict]:
     rows = []
     for k in sorted(lemmas):
@@ -54,9 +54,10 @@ def entries(
             ru, reviewed = list(o["ru"]), True
         lemma = term.display if term else lm.lemma
         lang = term.lang if term else lm.lang
-        # The file name follows the spoken SSML, so a corrected spelling or
-        # IPA gets a new URL instead of a stale cached recording.
-        voice = hashlib.sha256(ssml(lemma, lang, term.ipa if term else None).encode()).hexdigest()[:10]
+        # The file name follows what is spoken and by whom, so a corrected
+        # spelling, IPA, voice or engine gets a new URL, never a stale cache.
+        spoken = tts.spec(lemma, lang, term.ipa if term else None, engine)
+        voice = hashlib.sha256(spoken.encode()).hexdigest()[:10]
         heard = {fold(f) for f in lm.forms}
         aliases = sorted({v for v in (term.variants if term else []) if fold(v) not in heard})
         rows.append(

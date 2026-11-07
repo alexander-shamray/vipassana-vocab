@@ -5,6 +5,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -74,5 +76,26 @@ func TestServe_RefusesDevLogin(t *testing.T) {
 	err := dispatch(context.Background(), []string{"serve"}, func(k string) string { return env[k] })
 	if err == nil || !strings.Contains(err.Error(), "DEV_LOGIN") {
 		t.Errorf("serve with DEV_LOGIN: err = %v", err)
+	}
+}
+
+func TestWithLocalAudio(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "suffer-abc.mp3"), []byte("ID3"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	site := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "site") })
+	h := withLocalAudio(site, dir)
+	for path, want := range map[string]string{"/audio/suffer-abc.mp3": "ID3", "/": "site", "/words/x": "site"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != 200 || rec.Body.String() != want {
+			t.Errorf("GET %s = %d %q, want %q", path, rec.Code, rec.Body.String(), want)
+		}
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/audio/missing.mp3", nil))
+	if rec.Code != 404 {
+		t.Errorf("missing mp3 = %d, want 404", rec.Code)
 	}
 }

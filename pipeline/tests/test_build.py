@@ -1,6 +1,6 @@
 import json
 
-from vv_pipeline import build
+from vv_pipeline import build, tts
 from vv_pipeline import glossary as gl
 from vv_pipeline.models import Example, Lemma, Occ, Term, Translation
 from vv_pipeline.tts import ssml
@@ -65,3 +65,17 @@ def test_ssml_voices_ipa_and_escaping():
     assert "en-GB-RyanNeural" in en and "suffer &amp; &lt;go&gt;" in en
     pali = ssml("paññā", "pali", "pɐɲɲaː")
     assert "en-IN-PrabhatNeural" in pali and '<phoneme alphabet="ipa" ph="pɐɲɲaː">paññā</phoneme>' in pali
+
+
+def test_kokoro_spec_and_phonemes():
+    assert tts.kokoro_phonemes("sɐmaːdʱɪ") == "ˈsɐmaːdʰɪ"  # ʱ is not in Kokoro's set
+    assert tts.kokoro_phonemes("ˈsiːlɐ") == "ˈsiːlɐ"
+    assert tts.spec("paññā", "pali", "pɐɲɲaː", "kokoro") == "kokoro|hm_omega|ps|ˈpɐɲɲaː"
+    assert tts.spec("suffer", "en", None, "kokoro") == "kokoro|bm_george|text|suffer"
+    assert tts.spec("suffer", "en", None, "azure") == ssml("suffer", "en", None)
+
+
+def test_audio_name_changes_with_the_engine():
+    k = next(r for r in build.entries(lemmas(), {}, GLOSS, {}, "kokoro") if r["key"] == "panna")
+    a = next(r for r in build.entries(lemmas(), {}, GLOSS, {}, "azure") if r["key"] == "panna")
+    assert k["audio"] != a["audio"] and k["audio"].endswith(".mp3")
