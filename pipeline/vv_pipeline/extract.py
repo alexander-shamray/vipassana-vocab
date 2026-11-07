@@ -1,7 +1,8 @@
 """Turn transcripts into lemmas: forms, frequencies and the sentences they occur in."""
 
 import re
-from collections.abc import Callable, Iterable
+from bisect import bisect_right
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 
 from . import segments
@@ -12,6 +13,12 @@ from .textnorm import fold, key
 SKIP_POS = {"NUM", "PUNCT", "SPACE", "SYM", "X"}
 VOWELS = set("aeiouy")
 LEAD_SECONDS = 2  # start a link a little before the word
+# Goenka speaks in long chains of clauses (median sentence: 34 words). A
+# sentence too long to quote whole (examples.MAX_WORDS) is cut to the clauses
+# around the word, at most this many words, marked with "…".
+EXCERPT_WORDS = 20
+QUOTE_LIMIT = 25
+_CLAUSE_END = re.compile(r"[,;:]$")
 _GAP = re.compile(PHRASE_GAP)
 
 
@@ -61,10 +68,37 @@ def plausible(k: str) -> bool:
 def run(transcripts: Iterable[dict], glossary: Glossary, analyze: Analyzer) -> dict[str, Lemma]:
     lemmas: dict[str, Lemma] = {}
     for tr in transcripts:
-        for seg in tr["segments"]:
-            if segments.keep(seg):
-                _segment(seg, tr["talk"], tr["video_id"], glossary, analyze, lemmas)
+        for part in _runs(tr["segments"]):
+            _segment(part, tr["talk"], tr["video_id"], glossary, analyze, lemmas)
     return {k: v for k, v in lemmas.items() if v.is_term or _keep_lemma(v)}
+
+
+def _runs(segs: Iterable[dict]) -> Iterator[dict]:
+    """Consecutive kept segments joined into one text.
+
+    Whisper ends a segment wherever it likes, often mid-sentence; analysing
+    each segment alone cut the quotes into fragments. A dropped segment
+    (silence, chanting, noise) ends a run, so no sentence bridges it.
+    """
+    run: list[dict] = []
+    for seg in segs:
+        if segments.keep(seg):
+            run.append(seg)
+        elif run:
+            yield _join(run)
+            run = []
+    if run:
+        yield _join(run)
+
+
+def _join(segs: list[dict]) -> dict:
+    words: list[dict] = []
+    for s in segs:
+        for i, w in enumerate(s.get("words") or [{"word": s["text"], "start": s["start"]}]):
+            if i == 0 and words and not words[-1]["word"][-1:].isspace() and not w["word"][:1].isspace():
+                w = {**w, "word": " " + w["word"]}  # keep the last and first words apart
+            words.append(w)
+    return {"start": segs[0]["start"], "text": "".join(w["word"] for w in words), "words": words}
 
 
 def _keep_lemma(lm: Lemma) -> bool:
@@ -79,15 +113,13 @@ def _segment(
     words = seg.get("words") or []
     text = "".join(w["word"] for w in words) if words else seg["text"]
     starts = _char_times(words, seg["start"])
+    offsets = [o for o, _ in starts]
     doc = analyze(text)
+    sent_starts = [a for a, _ in doc.sents]
 
     def when(idx: int) -> float:
-        best = seg["start"]
-        for offset, t in starts:
-            if offset > idx:
-                break
-            best = t
-        return best
+        i = bisect_right(offsets, idx) - 1  # a run is a whole talk: no linear scans
+        return starts[i][1] if i >= 0 else seg["start"]
 
     quotes: dict[tuple[int, int], str] = {}
 
@@ -97,11 +129,17 @@ def _segment(
         return quotes[(a, b)]
 
     def sentence_at(idx: int) -> tuple[str, float]:
-        for a, b in doc.sents:
-            if a <= idx < b:
-                a += len(text[a:b]) - len(text[a:b].lstrip())  # time of the first word, not the gap
-                return quote(a, b), when(a)
-        return quote(0, len(text)), seg["start"]
+        i = bisect_right(sent_starts, idx) - 1
+        a, b = doc.sents[i] if i >= 0 and idx < doc.sents[i][1] else (0, len(text))
+        spans = [(m.start() + a, m.end() + a) for m in re.finditer(r"\S+", text[a:b])]
+        if not spans:
+            return quote(a, b), seg["start"]
+        if len(spans) <= QUOTE_LIMIT:
+            return quote(spans[0][0], spans[-1][1]), when(spans[0][0])
+        lo, hi = _excerpt([text[x:y] for x, y in spans], bisect_right([x for x, _ in spans], idx) - 1)
+        q = quote(spans[lo][0], spans[hi - 1][1])
+        q = ("… " if lo > 0 else "") + q.rstrip(",;:") + (" …" if hi < len(spans) else "")
+        return q, when(spans[lo][0])
 
     def add(k: str, lemma: str, lang: str, pos: str, form: str, idx: int, is_term: bool) -> None:
         lm = lemmas.get(k)
@@ -165,6 +203,35 @@ def _segment(
             add(term.key, term.display, term.lang, "NOUN", form, t.idx, True)
             continue
         add(k, lemma, "en", t.pos, form, t.idx, False)
+
+
+def _excerpt(words: list[str], at: int) -> tuple[int, int]:
+    """Word range [lo, hi) of at most EXCERPT_WORDS around words[at]: whole
+    clauses where they fit, else a window centred on the word."""
+    at = max(0, min(at, len(words) - 1))
+    clauses, start = [], 0
+    for j, w in enumerate(words):
+        if _CLAUSE_END.search(w) or j == len(words) - 1:
+            clauses.append((start, j + 1))
+            start = j + 1
+    c = next(k for k, (x, y) in enumerate(clauses) if x <= at < y)
+    lo, hi = clauses[c]
+    if hi - lo > EXCERPT_WORDS:
+        lo = max(0, min(at - EXCERPT_WORDS // 2, len(words) - EXCERPT_WORDS))
+        return lo, lo + EXCERPT_WORDS
+    left, right = c - 1, c + 1
+    while True:  # grow by whole clauses, nearest first, while they fit
+        grew = False
+        for k in (right, left):
+            if 0 <= k < len(clauses):
+                x, y = clauses[k]
+                if max(hi, y) - min(lo, x) <= EXCERPT_WORDS:
+                    lo, hi = min(lo, x), max(hi, y)
+                    right, left = (right + 1, left) if k == right else (right, left - 1)
+                    grew = True
+                    break
+        if not grew:
+            return lo, hi
 
 
 def _char_times(words: list[dict], fallback: float) -> list[tuple[int, float]]:
