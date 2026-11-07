@@ -129,6 +129,11 @@ func (a *Auth) CurrentUser(r *http.Request) (User, bool) {
 	if err != nil {
 		return User{}, false
 	}
+	// Taking an address off the invite list revokes existing sessions too.
+	if !a.cfg.EmailAllowed(u.Email) {
+		a.sm.Remove(r.Context(), sessionUserKey)
+		return User{}, false
+	}
 	return u, true
 }
 
@@ -146,6 +151,11 @@ func (a *Auth) begin(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// gothic would adopt a caller-supplied ?state=, enabling login CSRF;
+	// drop it so a fresh random state is always generated.
+	q := r.URL.Query()
+	q.Del("state")
+	r.URL.RawQuery = q.Encode()
 	gothic.BeginAuthHandler(w, r)
 }
 

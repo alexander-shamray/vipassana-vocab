@@ -72,3 +72,13 @@ func TestLoad_DevLoginOnlyOnLocalhost(t *testing.T) {
 		t.Error("DEV_LOGIN with a public BASE_URL must fail")
 	}
 }
+
+func TestLoad_OAuthNeedsLongSessionKey(t *testing.T) {
+	if _, err := Load(env(map[string]string{"GITHUB_CLIENT_ID": "id", "SESSION_KEY": "short"})); err == nil {
+		t.Error("a short SESSION_KEY with OAuth configured must fail")
+	}
+	key := "0123456789abcdef0123456789abcdef"
+	if _, err := Load(env(map[string]string{"GITHUB_CLIENT_ID": "id", "SESSION_KEY": key})); err != nil {
+		t.Errorf("32-byte key: %v", err)
+	}
+}

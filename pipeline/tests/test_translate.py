@@ -68,6 +68,15 @@ def test_missing_key_retried_once_then_left_empty(tmp_path):
     assert out["ghost"].ru == [] and out["chair"].ru == ["ру-chair"]
 
 
+def test_failed_batch_is_retried_on_next_run(tmp_path):
+    cache = tmp_path / "c.json"
+    out = translate.run(lemmas("chair"), GLOSS, FakeClient(drop={"chair"}), cache)
+    assert out["chair"].ru == []
+    again = FakeClient()
+    out = translate.run(lemmas("chair"), GLOSS, again, cache)
+    assert len(again.calls) == 1 and out["chair"].ru == ["ру-chair"]
+
+
 def test_crash_on_second_batch_keeps_first_in_cache(tmp_path):
     cache = tmp_path / "c.json"
     client = FakeClient(fail_on_call=2)

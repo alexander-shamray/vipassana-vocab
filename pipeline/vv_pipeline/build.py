@@ -1,5 +1,6 @@
 """Apply the owner's overrides and write dictionary/words.jsonl and data/examples.jsonl."""
 
+import hashlib
 import json
 from dataclasses import asdict
 from pathlib import Path
@@ -9,6 +10,8 @@ import yaml
 from . import paths
 from .glossary import Glossary
 from .models import Example, Lemma, Translation
+from .textnorm import fold
+from .tts import ssml
 
 
 def load_overrides(path: Path = paths.OVERRIDES / "words.yaml") -> dict[str, dict]:
@@ -49,17 +52,25 @@ def entries(
         ru, reviewed = tr.ru, bool(term and term.reviewed)
         if (o := overrides.get(k)) and o.get("ru"):
             ru, reviewed = list(o["ru"]), True
+        lemma = term.display if term else lm.lemma
+        lang = term.lang if term else lm.lang
+        # The file name follows the spoken SSML, so a corrected spelling or
+        # IPA gets a new URL instead of a stale cached recording.
+        voice = hashlib.sha256(ssml(lemma, lang, term.ipa if term else None).encode()).hexdigest()[:10]
+        heard = {fold(f) for f in lm.forms}
+        aliases = sorted({v for v in (term.variants if term else []) if fold(v) not in heard})
         rows.append(
             {
                 "key": k,
-                "lemma": term.display if term else lm.lemma,
-                "lang": term.lang if term else lm.lang,
+                "lemma": lemma,
+                "lang": lang,
                 "pos": tr.pos or lm.pos,
                 "forms": sorted(lm.forms),
+                "aliases": aliases,
                 "freq": lm.freq,
                 "ru": ru,
                 "note": tr.note,
-                "audio": f"{k}.mp3",
+                "audio": f"{k}-{voice}.mp3",
                 "reviewed": reviewed,
                 "is_term": lm.is_term,
             }

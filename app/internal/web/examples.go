@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -20,8 +21,9 @@ func (s *server) word(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	_, loggedIn := s.CurrentUser(r)
-	p := views.WordPage{Row: views.Row{Entry: *e, AudioURL: s.audioURL(e)}, LoggedIn: loggedIn}
+	user, loggedIn := s.CurrentUser(r)
+	p := views.WordPage{Row: views.Row{Entry: *e, AudioURL: s.audioURL(e)}, LoggedIn: loggedIn,
+		UserName: displayName(user)}
 	if loggedIn {
 		exs, err := dict.ExamplesFor(r.Context(), s.DB, e.Key)
 		if err != nil {
@@ -105,10 +107,22 @@ func Highlight(text string, forms []string) []views.Part {
 		add(word, want[strings.ToLower(word)])
 		i = j
 	}
-	// Multi-word lemmas ("mind and matter") are marked phrase by phrase.
+	// Multi-word forms ("laws of nature"): mark the longest one present.
+	var phrases []string
 	for f := range want {
 		if strings.Contains(f, " ") {
-			return highlightPhrase(parts, f)
+			phrases = append(phrases, f)
+		}
+	}
+	sort.Slice(phrases, func(i, j int) bool {
+		if len(phrases[i]) != len(phrases[j]) {
+			return len(phrases[i]) > len(phrases[j])
+		}
+		return phrases[i] < phrases[j]
+	})
+	for _, f := range phrases {
+		if marked := highlightPhrase(parts, f); len(marked) == 3 && marked[1].Mark {
+			return marked
 		}
 	}
 	return parts

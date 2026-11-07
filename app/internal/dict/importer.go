@@ -37,14 +37,16 @@ func ImportWords(ctx context.Context, db *sql.DB, r io.Reader) (Stats, error) {
 		}
 		seen[e.Key] = true
 		ru, _ := json.Marshal(nonNil(e.RU))
+		aliases, _ := json.Marshal(nonNil(e.Aliases))
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO words (key, lemma, lang, pos, freq, ru_json, note, audio, reviewed, is_term)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO words (key, lemma, lang, pos, freq, ru_json, aliases_json, note, audio, reviewed, is_term)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (key) DO UPDATE SET
 				lemma = excluded.lemma, lang = excluded.lang, pos = excluded.pos,
-				freq = excluded.freq, ru_json = excluded.ru_json, note = excluded.note,
+				freq = excluded.freq, ru_json = excluded.ru_json, aliases_json = excluded.aliases_json,
+				note = excluded.note,
 				audio = excluded.audio, reviewed = excluded.reviewed, is_term = excluded.is_term`,
-			e.Key, e.Lemma, e.Lang, e.POS, e.Freq, string(ru), e.Note, e.Audio, e.Reviewed, e.IsTerm); err != nil {
+			e.Key, e.Lemma, e.Lang, e.POS, e.Freq, string(ru), string(aliases), e.Note, e.Audio, e.Reviewed, e.IsTerm); err != nil {
 			return Stats{}, fmt.Errorf("upsert %q: %w", e.Key, err)
 		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM forms WHERE word_key = ?`, e.Key); err != nil {

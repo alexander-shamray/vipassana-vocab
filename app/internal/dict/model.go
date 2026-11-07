@@ -8,6 +8,7 @@ type Entry struct {
 	Lang     string   `json:"lang"` // "en" or "pali"
 	POS      string   `json:"pos"`
 	Forms    []string `json:"forms"`
+	Aliases  []string `json:"aliases"` // search-only spellings, not heard forms
 	Freq     int      `json:"freq"`
 	RU       []string `json:"ru"`
 	Note     *string  `json:"note"`

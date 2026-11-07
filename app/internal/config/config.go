@@ -45,6 +45,9 @@ func Load(getenv func(string) string) (Config, error) {
 		SessionKey:   getenv("SESSION_KEY"),
 		DevLogin:     strings.ToLower(strings.TrimSpace(getenv("DEV_LOGIN"))),
 	}
+	if (c.GoogleID != "" || c.GitHubID != "") && len(c.SessionKey) < 32 {
+		return Config{}, fmt.Errorf("config: SESSION_KEY must be at least 32 bytes when OAuth is configured")
+	}
 	if c.DevLogin != "" && !c.local() {
 		return Config{}, fmt.Errorf("config: DEV_LOGIN is only allowed with a localhost BASE_URL, got %q", c.BaseURL)
 	}

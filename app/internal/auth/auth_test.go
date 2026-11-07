@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
@@ -83,7 +85,7 @@ func TestCompleteLogin_AllowAny(t *testing.T) {
 }
 
 func TestProviders_OnlyConfigured(t *testing.T) {
-	a := newAuth(t, map[string]string{"GITHUB_CLIENT_ID": "id", "GITHUB_CLIENT_SECRET": "s"})
+	a := newAuth(t, map[string]string{"GITHUB_CLIENT_ID": "id", "GITHUB_CLIENT_SECRET": "s", "SESSION_KEY": "0123456789abcdef0123456789abcdef"})
 	if ps := a.Providers(); len(ps) != 1 || ps[0].Name != "github" {
 		t.Errorf("providers = %+v, want only github", ps)
 	}
@@ -102,5 +104,28 @@ func TestCompleteLogin_GoogleUnverifiedEmailRejected(t *testing.T) {
 	}
 	if _, err := a.completeLogin(context.Background(), "unknown", goth.User{Email: "me@x.com"}); err == nil {
 		t.Error("an unknown provider must not be trusted")
+	}
+}
+
+func TestCurrentUser_RevokedWhenRemovedFromInviteList(t *testing.T) {
+	a := newAuth(t, map[string]string{"ALLOWED_EMAILS": "me@x.com"})
+	u, err := a.completeLogin(context.Background(), "github", goth.User{Email: "me@x.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	check := func(a *Auth) (got bool) {
+		h := a.sm.LoadAndSave(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			a.sm.Put(r.Context(), sessionUserKey, u.ID)
+			_, got = a.CurrentUser(r)
+		}))
+		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
+		return got
+	}
+	if !check(a) {
+		t.Fatal("invited user should be signed in")
+	}
+	a.cfg.AllowedEmails = nil // owner removed the address
+	if check(a) {
+		t.Error("a session must stop working once the address is off the invite list")
 	}
 }
