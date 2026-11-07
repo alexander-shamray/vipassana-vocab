@@ -239,3 +239,32 @@ def test_excerpt_of_one_endless_clause_is_centred():
     assert _excerpt(words, 30) == (20, 40)
     assert _excerpt(words, 2) == (0, 20)
     assert _excerpt(words, 59) == (40, 60)
+
+
+def test_excerpt_never_is_a_lone_short_clause():
+    from vv_pipeline.extract import _excerpt
+
+    words = [f"w{i}" for i in range(29)] + ["x,", "yes,"] + [f"v{i}" for i in range(30)]
+    lo, hi = _excerpt(words, 30)
+    assert hi - lo == 20 and lo <= 30 < hi
+
+
+def test_excerpt_grows_on_the_side_with_less_context():
+    from vv_pipeline.extract import _excerpt
+
+    lo, hi = _excerpt(["a,"] * 30, 15)
+    assert abs((15 - lo) - (hi - 1 - 15)) <= 1
+
+
+def test_excerpt_does_not_cut_a_phrase_term():
+    from vv_pipeline.extract import _excerpt
+
+    words = [f"w{i}" for i in range(60)]
+    assert _excerpt(words, 30, [(39, 42)]) == (20, 42)
+    assert _excerpt(words, 30, [(18, 21)]) == (18, 40)
+
+
+def test_word_said_twice_in_a_sentence_is_quoted_once():
+    out = run([transcript(seg(" Observe, observe the sensations."))], GLOSS, fake_analyzer)
+    assert out["observe"].freq == 2
+    assert len(out["observe"].occurrences) == 1

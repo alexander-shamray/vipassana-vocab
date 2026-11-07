@@ -95,8 +95,10 @@ def _join(segs: list[dict]) -> dict:
     words: list[dict] = []
     for s in segs:
         for i, w in enumerate(s.get("words") or [{"word": s["text"], "start": s["start"]}]):
+            # A word without a time takes its own segment's, not the run's.
+            w = {**w, "start": w.get("start", s["start"])}
             if i == 0 and words and not words[-1]["word"][-1:].isspace() and not w["word"][:1].isspace():
-                w = {**w, "word": " " + w["word"]}  # keep the last and first words apart
+                w["word"] = " " + w["word"]  # keep the last and first words apart
             words.append(w)
     return {"start": segs[0]["start"], "text": "".join(w["word"] for w in words), "words": words}
 
@@ -128,15 +130,27 @@ def _segment(
             quotes[(a, b)] = glossary.respell(" ".join(text[a:b].split()))
         return quotes[(a, b)]
 
-    def sentence_at(idx: int) -> tuple[str, float]:
+    long_sents: dict[tuple[int, int], tuple[list[tuple[int, int]], list[str], list[tuple[int, int]]]] = {}
+
+    quoted: dict[str, tuple[int, int]] = {}  # the sentence each word was last quoted from
+
+    def span_of(idx: int) -> tuple[int, int]:
         i = bisect_right(sent_starts, idx) - 1
-        a, b = doc.sents[i] if i >= 0 and idx < doc.sents[i][1] else (0, len(text))
+        return doc.sents[i] if i >= 0 and idx < doc.sents[i][1] else (0, len(text))
+
+    def sentence_at(idx: int) -> tuple[str, float]:
+        a, b = span_of(idx)
         spans = [(m.start() + a, m.end() + a) for m in re.finditer(r"\S+", text[a:b])]
         if not spans:
             return quote(a, b), seg["start"]
-        if len(spans) <= QUOTE_LIMIT:
-            return quote(spans[0][0], spans[-1][1]), when(spans[0][0])
-        lo, hi = _excerpt([text[x:y] for x, y in spans], bisect_right([x for x, _ in spans], idx) - 1)
+        whole = quote(spans[0][0], spans[-1][1])
+        if len(whole.split()) <= QUOTE_LIMIT:  # counted after respelling: "ubakhin" -> "U Ba Khin"
+            return whole, when(spans[0][0])
+        if (a, b) not in long_sents:  # phrase terms are found once per sentence
+            ws = [text[x:y] for x, y in spans]
+            long_sents[(a, b)] = (spans, ws, _phrase_spans(ws, glossary))
+        spans, ws, keep = long_sents[(a, b)]
+        lo, hi = _excerpt(ws, bisect_right([x for x, _ in spans], idx) - 1, keep)
         q = quote(spans[lo][0], spans[hi - 1][1])
         q = ("… " if lo > 0 else "") + q.rstrip(",;:") + (" …" if hi < len(spans) else "")
         return q, when(spans[lo][0])
@@ -147,6 +161,10 @@ def _segment(
             lm = lemmas[k] = Lemma(key=k, lemma=lemma, lang=lang, pos=pos, is_term=is_term)
         lm.freq += 1
         lm.forms.add(form)
+        span = span_of(idx)
+        if quoted.get(k) == span:
+            return  # said twice in one sentence: one quote, not two overlapping excerpts
+        quoted[k] = span
         sent, t = sentence_at(idx)
         lm.occurrences.append(
             Occ(talk=talk, video_id=video_id, t=max(0, int(t) - LEAD_SECONDS), sentence=sent)
@@ -205,9 +223,24 @@ def _segment(
         add(k, lemma, "en", t.pos, form, t.idx, False)
 
 
-def _excerpt(words: list[str], at: int) -> tuple[int, int]:
-    """Word range [lo, hi) of at most EXCERPT_WORDS around words[at]: whole
-    clauses where they fit, else a window centred on the word."""
+def _phrase_spans(words: list[str], glossary: Glossary) -> list[tuple[int, int]]:
+    """Word ranges of phrase terms ("U Ba Khin"), which an excerpt must not cut."""
+    folded = [fold(clean(w)) for w in words]
+    out = []
+    for phrase, _ in glossary.phrases:
+        n = len(phrase)
+        for i in range(len(words) - n + 1):
+            if tuple(folded[i : i + n]) == phrase and not any(
+                _CLAUSE_END.search(w) for w in words[i : i + n - 1]
+            ):
+                out.append((i, i + n))
+    return out
+
+
+def _excerpt(words: list[str], at: int, keep: list[tuple[int, int]] = ()) -> tuple[int, int]:
+    """Word range [lo, hi) of about EXCERPT_WORDS around words[at]: whole
+    clauses where they make a quote of a useful size, else a window centred
+    on the word. Never cuts inside a `keep` range (a phrase term)."""
     at = max(0, min(at, len(words) - 1))
     clauses, start = [], 0
     for j, w in enumerate(words):
@@ -216,22 +249,31 @@ def _excerpt(words: list[str], at: int) -> tuple[int, int]:
             start = j + 1
     c = next(k for k, (x, y) in enumerate(clauses) if x <= at < y)
     lo, hi = clauses[c]
-    if hi - lo > EXCERPT_WORDS:
-        lo = max(0, min(at - EXCERPT_WORDS // 2, len(words) - EXCERPT_WORDS))
-        return lo, lo + EXCERPT_WORDS
     left, right = c - 1, c + 1
-    while True:  # grow by whole clauses, nearest first, while they fit
-        grew = False
-        for k in (right, left):
-            if 0 <= k < len(clauses):
-                x, y = clauses[k]
-                if max(hi, y) - min(lo, x) <= EXCERPT_WORDS:
-                    lo, hi = min(lo, x), max(hi, y)
-                    right, left = (right + 1, left) if k == right else (right, left - 1)
-                    grew = True
-                    break
-        if not grew:
-            return lo, hi
+    while hi - lo <= EXCERPT_WORDS:  # grow by whole clauses on the side with less context
+        order = (left, right) if at - lo < hi - 1 - at else (right, left)
+        k = next(
+            (
+                k
+                for k in order
+                if 0 <= k < len(clauses) and max(hi, clauses[k][1]) - min(lo, clauses[k][0]) <= EXCERPT_WORDS
+            ),
+            None,
+        )
+        if k is None:
+            break
+        lo, hi = min(lo, clauses[k][0]), max(hi, clauses[k][1])
+        left, right = (left - 1, right) if k == left else (left, right + 1)
+    if hi - lo > EXCERPT_WORDS or hi - lo < EXCERPT_WORDS // 2:
+        # One endless clause, or a clause too short to say anything ("… yes …").
+        lo = max(0, min(at - EXCERPT_WORDS // 2, len(words) - EXCERPT_WORDS))
+        hi = min(len(words), lo + EXCERPT_WORDS)
+    for x, y in keep:  # widen rather than cut a phrase term in two
+        if x < lo < y:
+            lo = x
+        if x < hi < y:
+            hi = y
+    return lo, hi
 
 
 def _char_times(words: list[dict], fallback: float) -> list[tuple[int, float]]:
