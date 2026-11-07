@@ -1,0 +1,2 @@
+[console_scripts]
+vv-pipeline = vv_pipeline.cli:main

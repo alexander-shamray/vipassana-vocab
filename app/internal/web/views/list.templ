@@ -1,0 +1,104 @@
+package views
+
+templ List(p ListPage) {
+	@Layout(p.Title, p.View, p.LoggedIn, p.UserName) {
+		<h1>{ p.Title }</h1>
+		if !p.LoggedIn {
+			if p.View == "main" {
+				<p class="hint"><a href="/login">Войдите</a>, чтобы скрывать выученные слова, отмечать важные и видеть примеры из бесед.</p>
+			} else {
+				<p class="hint"><a href="/login">Войдите</a>, чтобы видеть свои слова в этом разделе.</p>
+			}
+		}
+		<input
+			type="search"
+			name="q"
+			class="search"
+			value={ p.Q }
+			placeholder="Поиск — можно с опечатками и по-русски"
+			aria-label="Поиск"
+			autocomplete="off"
+			hx-get={ p.Path }
+			hx-trigger="input changed delay:200ms, search"
+			hx-target="#rows"
+			hx-swap="innerHTML"
+		/>
+		<nav class="letters" aria-label="Буквы">
+			for _, l := range p.Letters {
+				<a href={ templ.URL(p.Path + "?from=" + l) }>{ l }</a>
+			}
+		</nav>
+		<ul id="rows" class="rows">
+			@Rows(p)
+		</ul>
+	}
+}
+
+templ Rows(p ListPage) {
+	if len(p.Rows) == 0 {
+		<li class="empty">Ничего нет</li>
+	}
+	for _, r := range p.Rows {
+		@row(p, r)
+	}
+	if p.NextURL != "" {
+		<li class="more" hx-get={ p.NextURL } hx-trigger="revealed" hx-swap="outerHTML">Загрузка…</li>
+	}
+}
+
+templ row(p ListPage, r Row) {
+	<li id={ rowID(r.Entry.Key) } class="row">
+		if p.LoggedIn {
+			if p.View == "hidden" {
+				@action(r.Entry.Key, "restore", "↺", "Вернуть в словарь")
+			} else {
+				@action(r.Entry.Key, "hide", "🗑", "Выучено — скрыть")
+			}
+		}
+		<div class="word">
+			<span class={ "lemma", templ.KV("pali", r.Entry.Lang == "pali") }>{ r.Entry.Lemma }</span>
+			@say(r)
+			<span class="ru">{ meanings(r.Entry) }</span>
+			if r.Entry.Draft() {
+				<span class="draft">черновик перевода</span>
+			}
+			if otherForms(r.Entry) != "" {
+				<span class="forms">{ otherForms(r.Entry) }</span>
+			}
+		</div>
+		<div class="tail">
+			if p.LoggedIn && p.View == "main" {
+				@action(r.Entry.Key, "important", "☆", "Отметить как важное")
+			}
+			if p.LoggedIn && p.View == "important" {
+				@action(r.Entry.Key, "restore", "★", "Убрать из важных")
+			}
+			<a class="ex" href={ templ.URL(wordPath(r.Entry.Key, "")) }>примеры</a>
+		</div>
+	</li>
+}
+
+templ action(key, act, icon, label string) {
+	<form
+		method="post"
+		action={ templ.URL(wordPath(key, act)) }
+		hx-post={ wordPath(key, act) }
+		hx-target="closest li"
+		hx-swap="outerHTML"
+		class="act"
+	>
+		<button type="submit" class={ "icon", act } title={ label } aria-label={ label }>{ icon }</button>
+	</form>
+}
+
+templ say(r Row) {
+	<button
+		type="button"
+		class="say icon"
+		data-audio={ r.AudioURL }
+		data-text={ r.Entry.Lemma }
+		data-lang={ speakLang(r.Entry) }
+		title="Произнести"
+		aria-label="Произнести"
+	>🔊</button>
+}

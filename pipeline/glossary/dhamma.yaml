@@ -1,0 +1,34 @@
+# English words Goenka uses as Dhamma terms. A plain dictionary sense would
+# mislead here (sensation = vedanā, not "a sensation in the press"), so these
+# are translated from this list and reviewed by the owner, never by the LLM.
+# Same fields as pali.yaml; variants list the forms that map to the term.
+- {display: sensation, variants: [sensations], ru: ["ощущение (телесное, ведана)"], reviewed: false}
+- {display: equanimity, variants: [], ru: [невозмутимость, уравновешенность], reviewed: false}
+- {display: craving, variants: [cravings], ru: [страстное желание, жажда], reviewed: false}
+- {display: aversion, variants: [aversions], ru: [отвращение, неприязнь], reviewed: false}
+- {display: ignorance, variants: [], ru: [неведение], reviewed: false}
+- {display: reaction, variants: [reactions], ru: ["реакция ума (слепая, обусловленная)"], reviewed: false}
+- {display: impermanence, variants: [], ru: [непостоянство], reviewed: false}
+- {display: awareness, variants: [], ru: [осознанность], reviewed: false}
+- {display: mind and matter, variants: [], ru: [ум и материя], reviewed: false}
+- {display: misery, variants: [miseries], ru: [страдание, несчастье], reviewed: false}
+- {display: liberation, variants: [], ru: [освобождение], reviewed: false}
+- {display: purification, variants: [], ru: [очищение (ума)], reviewed: false}
+- {display: defilement, variants: [defilements], ru: [загрязнение ума], reviewed: false}
+- {display: morality, variants: [], ru: [нравственность (шила)], reviewed: false}
+- {display: concentration, variants: [], ru: [сосредоточение (самадхи)], reviewed: false}
+- {display: wisdom, variants: [], ru: [мудрость (панья)], reviewed: false}
+- {display: insight, variants: [], ru: [прозрение], reviewed: false}
+- {display: compassion, variants: [], ru: [сострадание], reviewed: false}
+- {display: loving kindness, variants: [loving-kindness], ru: [любящая доброта (метта)], reviewed: false}
+- {display: attachment, variants: [attachments], ru: [привязанность], reviewed: false}
+- {display: clinging, variants: [], ru: [цепляние], reviewed: false}
+- {display: ego, variants: [], ru: [эго, представление о «я»], reviewed: false}
+- {display: law of nature, variants: [laws of nature], ru: [закон природы], reviewed: false}
+- {display: conditioning, variants: [], ru: [обусловленность (ума)], reviewed: false}
+- {display: gross, variants: [], ru: [грубый (об ощущениях)], reviewed: false}
+- {display: subtle, variants: [], ru: [тонкий (об ощущениях)], reviewed: false}
+- {display: free flow, variants: [], ru: [свободный поток (ощущений)], reviewed: false}
+- {display: dissolution, variants: [], ru: [растворение], reviewed: false}
+- {display: arising and passing away, variants: [arising and passing], ru: [возникновение и исчезновение], reviewed: false}
+- {display: meditation, variants: [meditations], ru: [медитация], reviewed: false}

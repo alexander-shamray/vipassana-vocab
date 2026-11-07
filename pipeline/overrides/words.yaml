@@ -1,0 +1,6 @@
+# Owner's corrections, applied last. Keyed by word key (lower case, no diacritics).
+#
+#   some-junk: {drop: true}                 # remove from the dictionary entirely
+#   gonna: {merge_into: go}                 # fold forms and counts into another word
+#   observe: {ru: [наблюдать, замечать]}    # replace the translation (marks it reviewed)
+{}

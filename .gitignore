@@ -1,0 +1,29 @@
+# Pipeline working data: full audio and transcripts are copyrighted and stay local
+data/
+pipeline/.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Go build output and local databases
+app/bin/
+*.sqlite
+*.sqlite-*
+*.db
+
+# Generated TTS audio (uploaded to R2, not committed)
+audio/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Fetched from private R2 at deploy time; copyrighted quotes stay out of git
+dictionary/examples.jsonl
+.playwright-mcp/

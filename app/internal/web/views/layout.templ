@@ -1,0 +1,70 @@
+package views
+
+import "github.com/alexander-shamray/vipassana-vocab/app/internal/auth"
+
+templ Layout(title string, nav string, loggedIn bool, userName string) {
+	<!DOCTYPE html>
+	<html lang="ru">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } · Vipassana Vocab</title>
+			<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%238a5a12'/%3E%3C/svg%3E"/>
+			<link rel="stylesheet" href="/static/app.css"/>
+			<script src="/static/htmx.min.js" defer></script>
+			<script src="/static/app.js" defer></script>
+		</head>
+		<body>
+			<header class="top">
+				<nav class="tabs" aria-label="Разделы">
+					<a href="/" class={ templ.KV("on", nav == "main") }>Словарь</a>
+					<a href="/important" class={ templ.KV("on", nav == "important") }>Важные</a>
+					<a href="/hidden" class={ templ.KV("on", nav == "hidden") }>Выученные</a>
+				</nav>
+				if loggedIn {
+					<form method="post" action="/logout" class="who">
+						<span class="name">{ userName }</span>
+						<button type="submit" class="link">Выйти</button>
+					</form>
+				} else {
+					<a class="who" href="/login">Войти</a>
+				}
+			</header>
+			<main>
+				{ children... }
+			</main>
+			<dialog id="word-dialog" aria-label="Слово">
+				<div id="word-dialog-body"></div>
+			</dialog>
+		</body>
+	</html>
+}
+
+templ Login(ps []auth.Provider) {
+	@Layout("Вход", "", false, "") {
+		<h1>Вход</h1>
+		<p>Сайт открыт по приглашениям: войти можно с адресом, который добавил владелец.</p>
+		if len(ps) == 0 {
+			<p class="hint">Вход не настроен: задайте GOOGLE_CLIENT_ID и GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID и GITHUB_CLIENT_SECRET или, для локального запуска, DEV_LOGIN.</p>
+		}
+		<div class="providers">
+			for _, p := range ps {
+				if p.Name == "dev" {
+					<form method="post" action="/auth/dev">
+						<button type="submit" class="btn">Войти { p.Title }</button>
+					</form>
+				} else {
+					<a class="btn" href={ templ.URL("/auth/" + p.Name) }>Войти через { p.Title }</a>
+				}
+			}
+		</div>
+	}
+}
+
+templ NotInvited() {
+	@Layout("Нет приглашения", "", false, "") {
+		<h1>Нет приглашения</h1>
+		<p>Этот адрес пока не приглашён. Попросите владельца сайта добавить его в список.</p>
+		<p><a href="/">← к словарю</a></p>
+	}
+}

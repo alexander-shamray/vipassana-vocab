@@ -1,0 +1,53 @@
+package views
+
+import "strconv"
+
+templ Word(p WordPage) {
+	@Layout(p.Row.Entry.Lemma, "", p.LoggedIn, p.UserName) {
+		<p><a href="/" class="back">← к словарю</a></p>
+		@WordBody(p)
+	}
+}
+
+templ WordBody(p WordPage) {
+	<article class="card">
+		<header class="card-head">
+			<h2 class={ "lemma", templ.KV("pali", p.Row.Entry.Lang == "pali") }>{ p.Row.Entry.Lemma }</h2>
+			@say(p.Row)
+			<button type="button" class="icon close" data-close aria-label="Закрыть">×</button>
+		</header>
+		<p class="ru">{ meanings(p.Row.Entry) }</p>
+		if p.Row.Entry.Draft() {
+			<p class="draft">черновик перевода</p>
+		}
+		<h3>Формы в беседах</h3>
+		<ul class="formlist">
+			for _, f := range allForms(p.Row.Entry) {
+				<li>{ f }</li>
+			}
+		</ul>
+		<h3>Примеры из бесед</h3>
+		if !p.LoggedIn {
+			<p class="hint"><a href="/login">Войдите</a>, чтобы увидеть примеры из бесед.</p>
+		} else if len(p.Examples) == 0 {
+			<p class="hint">Примеров нет.</p>
+		} else {
+			<ol class="quotes">
+				for _, q := range p.Examples {
+					<li>
+						<blockquote>
+							for _, part := range q.Parts {
+								if part.Mark {
+									<mark>{ part.Text }</mark>
+								} else {
+									{ part.Text }
+								}
+							}
+						</blockquote>
+						<a href={ templ.URL(q.Link) } target="_blank" rel="noopener">Беседа { strconv.Itoa(q.Talk) }, { q.At } ▶</a>
+					</li>
+				}
+			</ol>
+		}
+	</article>
+}

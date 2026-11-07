@@ -1,0 +1,74 @@
+# Pali words heard in the talks.
+# display  — spelling shown on the site (with diacritics)
+# variants — other spellings Whisper or the speaker may produce (ASCII is added automatically)
+# ru       — Russian meanings, first one is the sense used in the talks
+# ipa      — optional pronunciation override; otherwise derived from `display`
+# reviewed — set to true once the owner has checked the Russian; until then the
+#            site marks the translation as a draft
+- {display: anicca, variants: [anichcha, anicha, anitya, anichha], ru: [непостоянство], reviewed: false}
+- {display: dukkha, variants: [dukha, dukka], ru: [страдание, неудовлетворённость], reviewed: false}
+- {display: anattā, variants: [anata, anatma], ru: [отсутствие «я», безличность], reviewed: false}
+- {display: sīla, variants: [shila, seela, sheela], ru: [нравственность], reviewed: false}
+- {display: samādhi, variants: [samadi], ru: [сосредоточение, власть над умом], reviewed: false}
+- {display: paññā, variants: [pannya, panya, prajna], ru: [мудрость, прозрение], reviewed: false}
+- {display: vedanā, variants: [vedna], ru: [ощущение], reviewed: false}
+- {display: saṅkhāra, variants: [sankara, sankharas, sankaras, samskara], ru: [санкхара — обусловленная реакция ума], reviewed: false}
+- {display: Dhamma, variants: [dharma], ru: [Дхамма — закон природы, учение Будды], reviewed: false}
+- {display: Buddha, variants: [], ru: [Будда — пробуждённый], reviewed: false}
+- {display: vipassanā, variants: [vipasana, vipashyana, vipassna], ru: [випассана — видение вещей такими, какие они есть], reviewed: false}
+- {display: ānāpāna, variants: [anapan, anapanna], ru: [анапана — наблюдение естественного дыхания], reviewed: false}
+- {display: mettā, variants: [metha, maitri], ru: [метта — любящая доброта], reviewed: false}
+- {display: nibbāna, variants: [nirvana, nibana], ru: [ниббана — освобождение, прекращение страдания], reviewed: false}
+- {display: kalāpa, variants: [kalapas], ru: [калапа — мельчайшая частица материи], reviewed: false}
+- {display: taṇhā, variants: [tanha], ru: [танха — жажда], reviewed: false}
+- {display: rāga, variants: [], ru: [рага — влечение, страсть], reviewed: false}
+- {display: dosa, variants: [dvesha], ru: [доса — отвращение, ненависть], reviewed: false}
+- {display: moha, variants: [], ru: [моха — заблуждение], reviewed: false}
+- {display: avijjā, variants: [avijja, avidya], ru: [авиджа — неведение], reviewed: false}
+- {display: kamma, variants: [karma], ru: [камма — действие, поступок], reviewed: false}
+- {display: saddhā, variants: [shraddha], ru: [саддха — вера, доверие], reviewed: false}
+- {display: viriya, variants: [virya], ru: [вирия — усилие], reviewed: false}
+- {display: sati, variants: [], ru: [сати — осознанность], reviewed: false}
+- {display: upekkhā, variants: [upekha, upeksha], ru: [упеккха — невозмутимость], reviewed: false}
+- {display: pāramī, variants: [paramis, paramita], ru: [парами — совершенство, добродетель], reviewed: false}
+- {display: dāna, variants: [], ru: [дана — щедрость, дар], reviewed: false}
+- {display: sutta, variants: [sutra], ru: [сутта — беседа Будды], reviewed: false}
+- {display: Saṅgha, variants: [sanga], ru: [Сангха — община], reviewed: false}
+- {display: bhikkhu, variants: [bhikku, bhikkhus], ru: [бхиккху — монах], reviewed: false}
+- {display: arahant, variants: [arahat, arhat], ru: [арахант — полностью освобождённый], reviewed: false}
+- {display: sotāpanna, variants: [sotapana], ru: [сотапанна — вошедший в поток], reviewed: false}
+- {display: jhāna, variants: [jhanas, dhyana], ru: [джхана — глубокое сосредоточение], reviewed: false}
+- {display: nāma, variants: [], ru: [нама — ум], reviewed: false}
+- {display: rūpa, variants: [], ru: [рупа — материя], reviewed: false}
+- {display: nāma-rūpa, variants: [nama rupa], ru: [нама-рупа — ум и материя], reviewed: false}
+- {display: viññāṇa, variants: [vinnana, vinyana], ru: [винняна — сознание], reviewed: false}
+- {display: saññā, variants: [sanna, sanya], ru: [санна — восприятие, распознавание], reviewed: false}
+- {display: citta, variants: [chitta], ru: [читта — ум], reviewed: false}
+- {display: cetanā, variants: [chetana], ru: [четана — намерение, воля], reviewed: false}
+- {display: lobha, variants: [], ru: [лобха — алчность], reviewed: false}
+- {display: adhiṭṭhāna, variants: [adhitthana, adhishthan], ru: [адхиттхана — твёрдая решимость], reviewed: false}
+- {display: khandha, variants: [kandha, skandha], ru: [кхандха — совокупность], reviewed: false}
+- {display: magga, variants: [], ru: [магга — путь], reviewed: false}
+- {display: ariya, variants: [arya], ru: [ария — благородный], reviewed: false}
+- {display: paṭicca samuppāda, variants: [paticca samupada, paticha samuppada], ru: [патичча самуппада — закон взаимозависимого возникновения], reviewed: false}
+- {display: sādhu, variants: [], ru: [садху — хорошо сказано], reviewed: false}
+- {display: Tathāgata, variants: [tathagat], ru: [Татхагата — «так ушедший», имя Будды], reviewed: false}
+- {display: bodhi, variants: [], ru: [бодхи — пробуждение], reviewed: false}
+- {display: Bodhisatta, variants: [bodhisattva], ru: [Бодхисатта — будущий Будда], reviewed: false}
+- {display: uppāda-vaya, variants: [uppada vaya], ru: [уппада-вая — возникновение и исчезновение], reviewed: false}
+- {display: bhaṅga, variants: [banga], ru: [бханга — растворение], reviewed: false}
+- {display: sampajañña, variants: [sampajanna, sampajanya], ru: [сампаджання — постоянное понимание непостоянства], reviewed: false}
+- {display: ātāpī, variants: [atapi], ru: [атапи — усердный], reviewed: false}
+- {display: satipaṭṭhāna, variants: [satipatthana], ru: [сатипаттхана — установление осознанности], reviewed: false}
+- {display: vedanānupassanā, variants: [vedananupassana], ru: [веданупассана — наблюдение ощущений], reviewed: false}
+- {display: kāyānupassanā, variants: [kayanupassana], ru: [каянупассана — наблюдение тела], reviewed: false}
+- {display: cittānupassanā, variants: [cittanupassana, chittanupassana], ru: [читтанупассана — наблюдение ума], reviewed: false}
+- {display: dhammānupassanā, variants: [dhammanupassana], ru: [дхамманупассана — наблюдение содержимого ума], reviewed: false}
+- {display: anusaya, variants: [], ru: [анусая — скрытые склонности], reviewed: false}
+- {display: āsava, variants: [asavas], ru: [асава — опьянения, загрязнения ума], reviewed: false}
+- {display: kilesa, variants: [klesha], ru: [килеса — загрязнения ума], reviewed: false}
+- {display: dhātu, variants: [dhatus], ru: [дхату — элемент], reviewed: false}
+- {display: pathavī, variants: [pathavi, prithvi], ru: [патхави — элемент земли], reviewed: false}
+- {display: āpo, variants: [], ru: [апо — элемент воды], reviewed: false}
+- {display: tejo, variants: [], ru: [теджо — элемент огня], reviewed: false}
+- {display: vāyo, variants: [vayu], ru: [ваё — элемент воздуха], reviewed: false}
