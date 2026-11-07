@@ -35,6 +35,15 @@ def test_pali_lemma_keeps_diacritics_key_does_not():
     assert p["lemma"] == "paññā" and p["lang"] == "pali" and p["is_term"] and not p["reviewed"]
 
 
+def test_aliases_and_audio_name_follow_the_glossary():
+    rows = build.entries(lemmas(), {}, GLOSS, {})
+    p = next(r for r in rows if r["key"] == "panna")
+    assert p["aliases"] == ["pannya"]  # "panna" was heard, so it is a form, not an alias
+    fixed = gl.index([Term("panna", "paññā", ["pannya"], "pali", ["мудрость"], False, ipa="pɐnnaː")])
+    p2 = next(r for r in build.entries(lemmas(), {}, fixed, {}) if r["key"] == "panna")
+    assert p["audio"].startswith("panna-") and p2["audio"] != p["audio"]
+
+
 def test_output_is_sorted_and_stable(tmp_path):
     lm = build.apply_lemma_overrides(lemmas(), OVERRIDES)
     rows = build.entries(lm, {}, GLOSS, OVERRIDES)

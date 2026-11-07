@@ -46,6 +46,14 @@ func dispatch(ctx context.Context, args []string, getenv func(string) string) er
 	}
 	switch args[0] {
 	case "serve":
+		// Production must say where it lives (cookies, OAuth callbacks) and
+		// never carries the passwordless local sign-in.
+		if getenv("DEV_LOGIN") != "" {
+			return errors.New("serve: DEV_LOGIN is only for `server dev`")
+		}
+		if getenv("BASE_URL") == "" {
+			return errors.New("serve: BASE_URL is required, e.g. https://<app>.fly.dev")
+		}
 		return serve(ctx, getenv, nil)
 	case "import":
 		return importCmd(ctx, args[1:], getenv)
@@ -139,8 +147,13 @@ func dev(ctx context.Context, getenv func(string) string) error {
 	if err != nil {
 		return err
 	}
+	// Loopback only: the passwordless sign-in must not be reachable from the LAN.
+	ln, err := net.Listen("tcp", "127.0.0.1:"+cfg.Port)
+	if err != nil {
+		return err
+	}
 	slog.Info("dev server", "url", cfg.BaseURL, "login", cfg.DevLogin)
-	return serve(ctx, env, nil)
+	return serve(ctx, env, ln)
 }
 
 // serve runs the site until ctx is cancelled. ln is for tests; nil listens

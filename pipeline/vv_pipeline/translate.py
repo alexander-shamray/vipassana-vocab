@@ -62,7 +62,7 @@ def run(
     for k, lm in sorted(lemmas.items()):
         if (term := glossary.terms.get(k)) is not None:
             out[k] = Translation(ru=term.ru, pos="NOUN", note=term.note)
-        elif k in cache:
+        elif k in cache and cache[k].ru:  # an empty entry means "failed": ask again
             out[k] = cache[k]
         else:
             todo.append(lm)
@@ -76,8 +76,9 @@ def run(
             got.update(_ask(client, missing))
         for lm in chunk:
             if lm.key not in got:
-                log.error("no translation for %r; left empty", lm.key)
-                got[lm.key] = Translation(ru=[], pos=lm.pos)
+                log.error("no translation for %r; left empty, retried on the next run", lm.key)
+                out[lm.key] = Translation(ru=[], pos=lm.pos)
+                continue  # never cache a failure
             cache[lm.key] = out[lm.key] = got[lm.key]
         _save(cache_path, cache)  # after every batch, so a crash loses at most one
         log.info("translated %d/%d", min(i + batch, len(todo)), len(todo))

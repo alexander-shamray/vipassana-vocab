@@ -62,9 +62,17 @@ func TestServe_Smoke(t *testing.T) {
 
 func TestDispatch_Errors(t *testing.T) {
 	getenv := func(string) string { return "" }
-	for _, args := range [][]string{nil, {"bogus"}, {"import"}} {
+	for _, args := range [][]string{nil, {"bogus"}, {"import"}, {"serve"}} {
 		if err := dispatch(context.Background(), args, getenv); err == nil {
 			t.Errorf("dispatch(%q) succeeded, want an error", args)
 		}
+	}
+}
+
+func TestServe_RefusesDevLogin(t *testing.T) {
+	env := map[string]string{"BASE_URL": "http://localhost:8080", "DEV_LOGIN": "dev@localhost"}
+	err := dispatch(context.Background(), []string{"serve"}, func(k string) string { return env[k] })
+	if err == nil || !strings.Contains(err.Error(), "DEV_LOGIN") {
+		t.Errorf("serve with DEV_LOGIN: err = %v", err)
 	}
 }

@@ -1,0 +1,14 @@
+# Build context is the repo root (fly.toml). Keep copyrighted audio and
+# transcripts, local databases and secrets out of the remote builder.
+data/
+**/data/
+**/.env
+**/.env.*
+*.sqlite
+*.sqlite-*
+app/bin/
+pipeline/
+.git/
+.github/
+docs/
+**/*_test.go

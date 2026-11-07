@@ -91,6 +91,12 @@ func TestSearch_DegenerateQueries(t *testing.T) {
 	}
 }
 
+func TestSearch_Alias(t *testing.T) {
+	if got := first(sampleIndex(t).Search("dharma", nil, 10)); got != "dhamma" {
+		t.Errorf("dharma → %q, want dhamma via its alias", got)
+	}
+}
+
 func TestSearch_Limit(t *testing.T) {
 	if n := len(sampleIndex(t).Search("a", nil, 3)); n != 3 {
 		t.Errorf("limit 3 returned %d", n)

@@ -37,7 +37,7 @@ type doc struct {
 // Index is safe for concurrent reads after New returns.
 type Index struct{ docs []doc }
 
-// New indexes each entry's lemma, forms and Russian meanings (each meaning
+// New indexes each entry's lemma, forms, aliases and Russian meanings (each meaning
 // whole and word by word).
 func New(entries []dict.Entry) *Index {
 	ix := &Index{docs: make([]doc, 0, len(entries))}
@@ -55,10 +55,13 @@ func New(entries []dict.Entry) *Index {
 		for _, f := range e.Forms {
 			add(f)
 		}
+		for _, a := range e.Aliases {
+			add(a)
+		}
 		for _, m := range e.RU {
 			add(m)
 			for _, w := range strings.FieldsFunc(m, func(r rune) bool {
-				return !(r == '-' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= 0x400 && r <= 0x4FF)
+				return r != '-' && (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < 0x400 || r > 0x4FF)
 			}) {
 				add(w)
 			}

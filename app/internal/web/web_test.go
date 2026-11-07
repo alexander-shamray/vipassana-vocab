@@ -176,7 +176,9 @@ func TestMarks_RepeatedHideIsIdempotent(t *testing.T) {
 		}
 	}
 	var n int
-	f.db.QueryRow(`SELECT COUNT(*) FROM word_marks WHERE user_id = 1`).Scan(&n)
+	if err := f.db.QueryRow(`SELECT COUNT(*) FROM word_marks WHERE user_id = 1`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
 	if n != 1 {
 		t.Errorf("marks = %d, want 1", n)
 	}
@@ -225,6 +227,8 @@ func TestWord_FormsExamplesAndEscaping(t *testing.T) {
 		t.Fatalf("GET /words/suffer = %d", code)
 	}
 	mustContain(t, body, "Формы в беседах", "<li>suffers</li>", "<li>suffering</li>", "Войдите")
+	_, body, _ = f.do(t, req{path: "/words/suffer", user: 1})
+	mustContain(t, body, `<span class="name">u@x.com</span>`)
 	mustNotContain(t, body, "You suffer")
 
 	_, body, _ = f.do(t, req{path: "/words/suffer", user: 1, htmx: true})
@@ -266,6 +270,12 @@ func TestHighlight(t *testing.T) {
 	}
 	if strings.Join(marked, "|") != "Suffering|suffer" {
 		t.Errorf("marked = %q", marked)
+	}
+	for i := 0; i < 20; i++ { // map order must not matter
+		parts = Highlight("the laws of nature work", []string{"law of nature", "laws of nature"})
+		if len(parts) != 3 || parts[1].Text != "laws of nature" {
+			t.Fatalf("plural phrase parts = %+v", parts)
+		}
 	}
 	parts = Highlight("Observe mind and matter now", []string{"mind and matter"})
 	if len(parts) != 3 || !parts[1].Mark || parts[1].Text != "mind and matter" {

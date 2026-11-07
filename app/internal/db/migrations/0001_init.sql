@@ -6,6 +6,8 @@ CREATE TABLE words (
     pos      TEXT NOT NULL DEFAULT '',
     freq     INTEGER NOT NULL DEFAULT 0,
     ru_json  TEXT NOT NULL DEFAULT '[]',
+    -- other spellings (karma for kamma): searchable, never shown as forms
+    aliases_json TEXT NOT NULL DEFAULT '[]',
     note     TEXT,
     audio    TEXT NOT NULL DEFAULT '',
     reviewed INTEGER NOT NULL DEFAULT 0,

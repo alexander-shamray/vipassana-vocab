@@ -10,7 +10,7 @@ import (
 // LoadAll reads every dictionary entry with its forms, ordered by key.
 func LoadAll(ctx context.Context, db *sql.DB) ([]Entry, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT key, lemma, lang, pos, freq, ru_json, note, audio, reviewed, is_term
+		SELECT key, lemma, lang, pos, freq, ru_json, aliases_json, note, audio, reviewed, is_term
 		FROM words ORDER BY key`)
 	if err != nil {
 		return nil, err
@@ -20,13 +20,16 @@ func LoadAll(ctx context.Context, db *sql.DB) ([]Entry, error) {
 	idx := map[string]int{}
 	for rows.Next() {
 		var e Entry
-		var ru string
-		if err := rows.Scan(&e.Key, &e.Lemma, &e.Lang, &e.POS, &e.Freq, &ru, &e.Note,
+		var ru, aliases string
+		if err := rows.Scan(&e.Key, &e.Lemma, &e.Lang, &e.POS, &e.Freq, &ru, &aliases, &e.Note,
 			&e.Audio, &e.Reviewed, &e.IsTerm); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal([]byte(ru), &e.RU); err != nil {
 			return nil, fmt.Errorf("word %q: bad ru_json: %w", e.Key, err)
+		}
+		if err := json.Unmarshal([]byte(aliases), &e.Aliases); err != nil {
+			return nil, fmt.Errorf("word %q: bad aliases_json: %w", e.Key, err)
 		}
 		idx[e.Key] = len(out)
 		out = append(out, e)

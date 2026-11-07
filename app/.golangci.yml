@@ -1,0 +1,12 @@
+version: "2"
+
+linters:
+  settings:
+    errcheck:
+      # Deferred cleanup whose error has nowhere useful to go.
+      exclude-functions:
+        - (*database/sql.DB).Close
+        - (*database/sql.Rows).Close
+        - (*database/sql.Tx).Rollback
+        - (*os.File).Close
+        - (io.ReadCloser).Close

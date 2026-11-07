@@ -129,6 +129,11 @@ func (a *Auth) CurrentUser(r *http.Request) (User, bool) {
 	if err != nil {
 		return User{}, false
 	}
+	// Taking an address off the invite list revokes existing sessions too.
+	if !a.cfg.EmailAllowed(u.Email) {
+		a.sm.Remove(r.Context(), sessionUserKey)
+		return User{}, false
+	}
 	return u, true
 }
 
@@ -146,6 +151,11 @@ func (a *Auth) begin(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// gothic would adopt a caller-supplied ?state=, enabling login CSRF;
+	// drop it so a fresh random state is always generated.
+	q := r.URL.Query()
+	q.Del("state")
+	r.URL.RawQuery = q.Encode()
 	gothic.BeginAuthHandler(w, r)
 }
 
@@ -174,6 +184,22 @@ func (a *Auth) callback(w http.ResponseWriter, r *http.Request) {
 	a.signIn(w, r, u)
 }
 
+// emailVerified reports whether the provider vouches that the user owns the
+// address; the invite list is only as strong as this check. goth's GitHub
+// provider already returns only the public (necessarily verified) or the
+// primary verified address; Google's userinfo says so in verified_email.
+func emailVerified(provider string, gu goth.User) bool {
+	switch provider {
+	case "google":
+		v, _ := gu.RawData["verified_email"].(bool)
+		return v
+	case "github", "dev":
+		return true
+	default:
+		return false
+	}
+}
+
 func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 	if err := a.sm.Destroy(r.Context()); err != nil {
 		http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
@@ -185,7 +211,7 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 // completeLogin checks the invite list and creates or refreshes the user.
 func (a *Auth) completeLogin(ctx context.Context, provider string, gu goth.User) (User, error) {
 	email := strings.ToLower(strings.TrimSpace(gu.Email))
-	if !a.cfg.EmailAllowed(email) {
+	if !a.cfg.EmailAllowed(email) || !emailVerified(provider, gu) {
 		return User{}, ErrNotInvited
 	}
 	name := strings.TrimSpace(gu.Name)
