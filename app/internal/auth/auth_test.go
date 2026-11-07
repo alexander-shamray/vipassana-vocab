@@ -13,6 +13,8 @@ import (
 	"github.com/alexander-shamray/vipassana-vocab/app/internal/db"
 )
 
+var verified = map[string]any{"verified_email": true}
+
 func newAuth(t *testing.T, env map[string]string) *Auth {
 	t.Helper()
 	cfg, err := config.Load(func(k string) string { return env[k] })
@@ -39,7 +41,7 @@ func users(t *testing.T, a *Auth) int {
 func TestCompleteLogin_InvitedCreatesOnce(t *testing.T) {
 	a := newAuth(t, map[string]string{"ALLOWED_EMAILS": "me@x.com"})
 	ctx := context.Background()
-	u1, err := a.completeLogin(ctx, "google", goth.User{Email: "me@x.com", Name: "Me"})
+	u1, err := a.completeLogin(ctx, "google", goth.User{Email: "me@x.com", Name: "Me", RawData: verified})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +74,7 @@ func TestCompleteLogin_EmptyEmail(t *testing.T) {
 
 func TestCompleteLogin_AllowAny(t *testing.T) {
 	a := newAuth(t, map[string]string{"ALLOW_ANY": "true"})
-	if _, err := a.completeLogin(context.Background(), "google", goth.User{Email: "x@y.z"}); err != nil {
+	if _, err := a.completeLogin(context.Background(), "google", goth.User{Email: "x@y.z", RawData: verified}); err != nil {
 		t.Fatal(err)
 	}
 	if users(t, a) != 1 {
@@ -84,5 +86,21 @@ func TestProviders_OnlyConfigured(t *testing.T) {
 	a := newAuth(t, map[string]string{"GITHUB_CLIENT_ID": "id", "GITHUB_CLIENT_SECRET": "s"})
 	if ps := a.Providers(); len(ps) != 1 || ps[0].Name != "github" {
 		t.Errorf("providers = %+v, want only github", ps)
+	}
+}
+
+func TestCompleteLogin_GoogleUnverifiedEmailRejected(t *testing.T) {
+	a := newAuth(t, map[string]string{"ALLOWED_EMAILS": "me@x.com"})
+	for _, raw := range []map[string]any{nil, {"verified_email": false}, {"verified_email": "true"}} {
+		_, err := a.completeLogin(context.Background(), "google", goth.User{Email: "me@x.com", RawData: raw})
+		if !errors.Is(err, ErrNotInvited) {
+			t.Errorf("RawData %v: err = %v, want ErrNotInvited", raw, err)
+		}
+	}
+	if users(t, a) != 0 {
+		t.Error("an unverified Google address must not create a user")
+	}
+	if _, err := a.completeLogin(context.Background(), "unknown", goth.User{Email: "me@x.com"}); err == nil {
+		t.Error("an unknown provider must not be trusted")
 	}
 }
