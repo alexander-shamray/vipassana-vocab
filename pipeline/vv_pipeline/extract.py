@@ -91,8 +91,8 @@ def _segment(
         for a, b in doc.sents:
             if a <= idx < b:
                 a += len(text[a:b]) - len(text[a:b].lstrip())  # time of the first word, not the gap
-                return " ".join(text[a:b].split()), when(a)
-        return " ".join(text.split()), seg["start"]
+                return glossary.respell(" ".join(text[a:b].split())), when(a)
+        return glossary.respell(" ".join(text.split())), seg["start"]
 
     def add(k: str, lemma: str, lang: str, pos: str, form: str, idx: int, is_term: bool) -> None:
         lm = lemmas.get(k)

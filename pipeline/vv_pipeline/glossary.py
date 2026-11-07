@@ -1,5 +1,6 @@
 """Pali and Dhamma glossaries: hand-checked spellings, meanings and pronunciations."""
 
+import re
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +20,38 @@ class Glossary:
 
     def __iter__(self):
         return iter(self.terms.values())
+
+    def respell(self, text: str) -> str:
+        """Write Pali terms in a quote with their glossary spelling.
+
+        Whisper writes what it hears ("Sheila", "parmi", "samma vacha"); the
+        site quotes the talks, so a misheard Pali word is shown as "sīla".
+        English (dhamma.yaml) terms are left as spoken.
+        """
+        for words, term in self.phrases:
+            if term.lang != "pali":
+                continue
+            pattern = r"\b" + r"[\s,-]+".join(re.escape(w) for w in words) + r"\b"
+            text = re.sub(pattern, lambda m, t=term: _cased(t.display, m.group(0)), text, flags=re.IGNORECASE)
+
+        def one(m: re.Match) -> str:
+            word = m.group(0)
+            term = self.single.get(fold(word))
+            if term is None or term.lang != "pali" or " " in term.display or "-" in term.display:
+                return word  # a lone word of a compound stays as spoken
+            return _cased(term.display, word)
+
+        return _WORD.sub(one, text)
+
+
+_WORD = re.compile(r"[^\W\d_]+")
+
+
+def _cased(display: str, spoken: str) -> str:
+    """Keep a capital the speaker's sentence had: "Sheila" -> "Sīla"."""
+    if spoken[:1].isupper() and display[:1].islower():
+        return display[:1].upper() + display[1:]
+    return display
 
 
 def load(directory: Path = paths.GLOSSARY) -> Glossary:

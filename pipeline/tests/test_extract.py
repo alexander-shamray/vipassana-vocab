@@ -123,3 +123,32 @@ def test_plausible():
 def test_pali_ipa():
     assert gl.pali_ipa("paññā") == "pɐɲɲaː"
     assert gl.pali_ipa("dukkha") == "dʊkkʰɐ"
+
+
+def test_quotes_use_the_glossary_spelling_of_pali():
+    g = gl.index(
+        [
+            Term("sila", "sīla", ["sheila"], "pali", ["нравственность"], False),
+            Term("samma-vaca", "sammā-vācā", ["samma vacha"], "pali", ["правильная речь"], False),
+            Term("sensation", "sensation", ["sensations"], "en", ["ощущение"], False),
+        ]
+    )
+    out = run(
+        [transcript(seg(" Sheila is morality, samma vacha too. Observe sensations."))], g, fake_analyzer
+    )
+    assert out["sila"].occurrences[0].sentence == "Sīla is morality, sammā-vācā too."
+    assert out["samma-vaca"].freq == 1
+    # English terms keep the spoken form.
+    assert out["sensation"].occurrences[0].sentence == "Observe sensations."
+
+
+def test_respell_adds_diacritics_and_keeps_capitals():
+    g = gl.index(
+        [
+            Term("samadhi", "samādhi", [], "pali", ["сосредоточение"], False),
+            Term("dhamma", "Dhamma", [], "pali", ["Дхамма"], False),
+            Term("samma-vaca", "sammā-vācā", [], "pali", ["правильная речь"], False),
+        ]
+    )
+    assert g.respell("Samadhi and dhamma, samma vaca.") == "Samādhi and Dhamma, sammā-vācā."
+    assert g.respell("Buddhas teach.") == "Buddhas teach."
