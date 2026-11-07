@@ -66,7 +66,7 @@ def entries(
                 "lemma": lemma,
                 "lang": lang,
                 "pos": tr.pos or lm.pos,
-                "forms": sorted(lm.forms),
+                "forms": sorted(_forms(lm.forms, term)),
                 "aliases": aliases,
                 "freq": lm.freq,
                 "ru": ru,
@@ -77,6 +77,26 @@ def entries(
             }
         )
     return rows
+
+
+def _forms(heard: set[str], term) -> set[str]:
+    """For a Pali term, the glossary spelling stands for every spelling that
+    differs only by diacritics or was misheard; forms said on purpose
+    (Sanskrit "shila") and plurals stay. English words keep what was heard."""
+    if term is None or term.lang != "pali":
+        return set(heard)
+    base = fold(term.display)
+    misheard = {fold(m) for m in term.misheard}
+    out = {term.display}
+    for f in heard:
+        k = fold(f)
+        if k in (base, base.replace("-", " ")) or k in misheard:
+            continue
+        if k.removesuffix("s") in ({base} | misheard):
+            out.add(term.display + "s")
+        else:
+            out.add(f)
+    return out
 
 
 def with_existing_audio(rows: list[dict], audio_dir: Path) -> list[dict]:

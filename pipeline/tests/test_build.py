@@ -100,3 +100,10 @@ def test_voice_follows_language_not_ipa():
 def test_pali_ipa_short_vowel_before_double_consonant():
     assert gl.pali_ipa("mettā") == "mettaː"
     assert gl.pali_ipa("vedanā") == "ʋeːdɐnaː"
+
+
+def test_pali_forms_hide_mishearings_and_diacritic_variants():
+    term = Term("sila", "sīla", ["shila"], "pali", ["нравственность"], False, misheard=["sheila", "sheela"])
+    heard = {"sheela", "sheila", "shila", "sila", "sīla", "sīlā", "śīla", "silas"}
+    assert build._forms(heard, term) == {"sīla", "shila", "sīlas"}
+    assert build._forms({"sensations"}, None) == {"sensations"}

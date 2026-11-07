@@ -142,3 +142,8 @@
 - {display: Visākhā, variants: [], misheard: [vesakha], ru: [Висакха — мирянка, покровительница Будды], reviewed: false}
 - {display: Bhāradvāja, variants: [bharadwaj], misheard: [bharadwaja], ru: [Бхарадваджа — брахман из рассказа о гневе], reviewed: false}
 - {display: Kisā Gotamī, variants: [], misheard: [kissa gotami, kisa gotami], ru: [Киса Готами — мать, потерявшая сына, ученица Будды], reviewed: false}
+# The three words of the closing blessing, for when they are said apart
+# ("bhavatu, sabba, mangalam") and the phrase does not match.
+- {display: bhavatu, variants: [], ru: [бхавату — да будет], reviewed: false}
+- {display: sabba, variants: [], misheard: [sabha], ru: [сабба — всё, все], reviewed: false}
+- {display: maṅgalaṃ, variants: [], ru: [мангалам — благо, счастье], reviewed: false}

@@ -17,24 +17,22 @@ def filler(n, freq=50):
     return {f"w{i}": lemma(f"w{i}", freq=freq) for i in range(n)}
 
 
-def test_three_from_different_talks_shortest_first():
+def test_three_from_different_talks_whole_sentences_first():
+    twelve = "Observe the breath as it comes in and goes out naturally, just observe."
     occs = [
-        occ(1, "a b c d e f"),
-        occ(1, "a b c"),
-        occ(2, "a b c d"),
-        occ(3, "a b c d e"),
-        occ(4, "a b c d e f g"),
-        occ(2, "x y z"),
-        occ(3, "q r s t u v w"),
-        occ(4, "m n o"),
-        occ(1, "long " * 10),
-        occ(2, "p q r s"),
+        occ(1, "one of your word."),  # fragment: no capital
+        occ(1, twelve),
+        occ(2, "The word is short."),
+        occ(2, "and then the word continues without any end"),  # fragment
+        occ(3, "This word appears in a sentence of about the right length."),
+        occ(4, "Another word sentence that is whole and fine to show here."),
     ]
     lemmas = {"word": lemma("word", freq=10, occs=occs), **filler(100)}
     picked = choose(lemmas, set())["word"]
     assert len(picked) == 3
     assert len({e.talk for e in picked}) == 3
-    assert [len(e.text.split()) for e in picked] == [3, 3, 3]
+    assert all(e.text[0].isupper() and e.text.endswith(".") for e in picked)
+    assert picked[0].text == twelve  # closest to IDEAL_WORDS
 
 
 def test_long_sentence_never_chosen():

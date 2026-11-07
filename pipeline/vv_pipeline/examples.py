@@ -1,4 +1,4 @@
-"""Pick a few short quotes per word, keeping the total quoted text small.
+"""Pick a few readable quotes per word, keeping the total quoted text small.
 
 Copyright limit from the design: at most PER_WORD quotes of at most
 MAX_WORDS words, none for stop words or the most frequent words.
@@ -14,6 +14,9 @@ PER_WORD = 3
 MAX_WORDS = 25
 MIN_WORDS = 3
 TOP_SHARE = 0.02
+# Whisper cuts sentences at segment ends, so the shortest quotes were mostly
+# fragments ("one of your sīla."). Prefer a whole sentence of about this size.
+IDEAL_WORDS = 12
 
 
 def choose(lemmas: dict[str, Lemma], stop_words: set[str]) -> dict[str, list[Example]]:
@@ -36,11 +39,11 @@ def _pick(lm: Lemma) -> list[Example]:
         n = len(occ.sentence.split())
         if MIN_WORDS <= n <= MAX_WORDS and occ.sentence not in seen:
             seen.add(occ.sentence)
-            candidates.append((n, occ.talk, occ.t, occ))
-    candidates.sort(key=lambda c: c[:3])
+            candidates.append((not _whole(occ.sentence), abs(n - IDEAL_WORDS), occ.talk, occ.t, occ))
+    candidates.sort(key=lambda c: c[:4])
 
     picked, talks = [], set()
-    for *_, occ in candidates:  # first pass: one per talk, shortest first
+    for *_, occ in candidates:  # first pass: one per talk, best first
         if occ.talk not in talks:
             picked.append(occ)
             talks.add(occ.talk)
@@ -52,3 +55,9 @@ def _pick(lm: Lemma) -> list[Example]:
         if occ not in picked:
             picked.append(occ)
     return [Example(lm.key, o.talk, o.t, o.video_id, o.sentence) for o in picked]
+
+
+def _whole(sentence: str) -> bool:
+    """Starts with a capital and ends like a sentence: not a cut-off fragment."""
+    s = sentence.strip()
+    return bool(s) and s[0].isupper() and s[-1] in ".?!"
