@@ -36,7 +36,7 @@ def _pick(lm: Lemma) -> list[Example]:
     seen: set[str] = set()
     candidates = []
     for occ in lm.occurrences:
-        n = len(occ.sentence.split())
+        n = len([w for w in occ.sentence.split() if w != "…"])  # an excerpt's "…" is not a word
         if MIN_WORDS <= n <= MAX_WORDS and occ.sentence not in seen:
             seen.add(occ.sentence)
             candidates.append(

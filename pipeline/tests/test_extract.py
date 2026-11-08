@@ -200,3 +200,71 @@ def test_english_plural_of_a_misheard_pali_word_counts_for_the_term():
     out = run([transcript(seg(" Of these five sheilas, keep each sheila."))], g, fake_analyzer)
     assert out["sila"].freq == 2
     assert "sheila" not in out
+
+
+def test_sentence_split_across_segments_is_quoted_whole():
+    first = seg(" Keep your sila and", start=10.0)
+    second = seg(" observe the sensations.", start=14.0)
+    out = run([transcript(first, second)], GLOSS, fake_analyzer)
+    occ = out["observe"].occurrences[0]
+    assert occ.sentence == "Keep your sila and observe the sensations."
+    assert occ.t == 8  # the sentence starts in the first segment, minus the lead
+
+
+def test_dropped_segment_ends_the_sentence():
+    first = seg(" Keep your sila and", start=10.0)
+    noise = seg(" la la la", start=14.0, avg_logprob=-1.5)
+    second = seg(" observe the sensations.", start=18.0)
+    out = run([transcript(first, noise, second)], GLOSS, fake_analyzer)
+    assert out["observe"].occurrences[0].sentence == "observe the sensations."
+
+
+def test_long_sentence_is_quoted_as_the_clauses_around_the_word():
+    long = (
+        " When you sit, you feel pain in the legs, you feel aches in the back,"
+        " you start to observe the sensations with equanimity, without reacting,"
+        " and slowly, slowly the old habit of the mind changes at the deepest level."
+    )
+    out = run([transcript(seg(long))], GLOSS, fake_analyzer)
+    q = out["observe"].occurrences[0].sentence
+    assert q.startswith("… ") and q.endswith(" …")
+    assert "you start to observe the sensations with equanimity" in q
+    assert len(q.split()) <= 25
+
+
+def test_excerpt_of_one_endless_clause_is_centred():
+    from vv_pipeline.extract import _excerpt
+
+    words = [f"w{i}" for i in range(60)]
+    assert _excerpt(words, 30) == (20, 40)
+    assert _excerpt(words, 2) == (0, 20)
+    assert _excerpt(words, 59) == (40, 60)
+
+
+def test_excerpt_never_is_a_lone_short_clause():
+    from vv_pipeline.extract import _excerpt
+
+    words = [f"w{i}" for i in range(29)] + ["x,", "yes,"] + [f"v{i}" for i in range(30)]
+    lo, hi = _excerpt(words, 30)
+    assert hi - lo == 20 and lo <= 30 < hi
+
+
+def test_excerpt_grows_on_the_side_with_less_context():
+    from vv_pipeline.extract import _excerpt
+
+    lo, hi = _excerpt(["a,"] * 30, 15)
+    assert abs((15 - lo) - (hi - 1 - 15)) <= 1
+
+
+def test_excerpt_does_not_cut_a_phrase_term():
+    from vv_pipeline.extract import _excerpt
+
+    words = [f"w{i}" for i in range(60)]
+    assert _excerpt(words, 30, [(39, 42)]) == (20, 42)
+    assert _excerpt(words, 30, [(18, 21)]) == (18, 40)
+
+
+def test_word_said_twice_in_a_sentence_is_quoted_once():
+    out = run([transcript(seg(" Observe, observe the sensations."))], GLOSS, fake_analyzer)
+    assert out["observe"].freq == 2
+    assert len(out["observe"].occurrences) == 1
