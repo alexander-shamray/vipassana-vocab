@@ -1,5 +1,5 @@
 """Second opinion on the stress marks: RuAccent (dictionary and homograph model) against Claude's marks."""
-import collections, json, re, sys
+import collections, json, os, re, sys
 sys.stdout.reconfigure(encoding='utf-8')
 from ruaccent import RUAccent
 from lessons import at
@@ -7,7 +7,9 @@ from marks import fix_marks
 
 acc = RUAccent()
 acc.load(omograph_model_size='turbo3.1', use_dictionary=True, tiny_mode=False)
-ru = json.load(open(at('full-ru.json'), encoding='utf-8'))
+# Claude's own marks, also when dub marks has already rewritten full-ru.json.
+source = at('full-ru.claude.json') if os.path.exists(at('full-ru.claude.json')) else at('full-ru.json')
+ru = json.load(open(source, encoding='utf-8'))
 WORD = re.compile(r'[а-яёА-ЯЁ+]+')
 out = []
 diff = collections.Counter()

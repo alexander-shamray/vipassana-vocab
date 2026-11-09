@@ -52,7 +52,8 @@ func dropRepeats(text string) string {
 			for last < len(rs) && isWordRune(rs[last]) {
 				last++
 			}
-			if last > next && strings.EqualFold(string(rs[i:end]), string(rs[next:last])) {
+			hyphen := last < len(rs) && rs[last] == '-' // "что что-то" is two words
+			if last > next && !hyphen && strings.EqualFold(string(rs[i:end]), string(rs[next:last])) {
 				end = last
 			}
 		}
@@ -105,6 +106,8 @@ type phrase struct {
 	RuMarked string  `json:"ru_marked,omitempty"`
 	EnID     *int    `json:"en_id,omitempty"`
 	RuAccent string  `json:"ruaccent,omitempty"`
+	// Misaligned: RuAccent split this phrase into other words, so its marks cannot be paired with ours.
+	Misaligned bool `json:"misaligned,omitempty"`
 }
 
 func readJSON(path string, into any) error {
@@ -171,7 +174,7 @@ func markWord(claude, ruaccent string, fixes map[string]int, counts map[string]i
 func runMarks(l lesson) error {
 	var src []phrase
 	if err := readJSON(l.At("full-ru-accent.json"), &src); err != nil {
-		return err
+		return fmt.Errorf("run dub accent first: %w", err)
 	}
 	fixes, err := loadFixes()
 	if err != nil {
@@ -191,7 +194,10 @@ func runMarks(l lesson) error {
 	var out []phrase
 	var dropped []int
 	for _, p := range src {
-		theirs := markedWord.FindAllString(p.RuAccent, -1)
+		var theirs []string
+		if !p.Misaligned {
+			theirs = markedWord.FindAllString(p.RuAccent, -1)
+		}
 		k := 0
 		marked := markedWord.ReplaceAllStringFunc(fixMarks(p.RuMarked), func(w string) string {
 			other := ""
@@ -205,7 +211,7 @@ func runMarks(l lesson) error {
 			dropped = append(dropped, p.ID)
 			continue
 		}
-		p.RuMarked, p.RuAccent = marked, ""
+		p.RuMarked, p.RuAccent, p.Misaligned = marked, "", false
 		out = append(out, p)
 	}
 	if err := writeJSON(l.At("full-ru.json"), out); err != nil {

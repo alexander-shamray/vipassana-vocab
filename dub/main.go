@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const usage = `dub: Russian dub of a lesson. Full guide: docs/dub.md
@@ -25,16 +27,19 @@ const usage = `dub: Russian dub of a lesson. Full guide: docs/dub.md
   dub marks <lesson>     final stress marks: stress-fixes.json, then RuAccent, then Claude
   dub silero <lesson>    voice: Silero eugene
   dub xtts <lesson>      voice: XTTS, cloned from the English talk; a Whisper check; fresh takes of the wrong phrases
+  dub retake <lesson> <id>...  a new XTTS take of the chosen phrases; it replaces the current one
+  dub find <lesson> <word>     phrases with this word: their ids and text
   dub fit <lesson>       lay the tracks on the English timeline, build the files and the .mkv (-stats: only report)
   dub page <lesson>      write the player page
   dub serve              open the players to this Wi-Fi network (-addr, default :8765). No password
 
-Options: -home <folder> working folder, default data/dub-pilot.
+Options: -home <folder> working folder, default data/dub-pilot. It must sit two levels below the repository root.
 `
 
 const (
 	whisperPython = "../../pipeline/.venv/Scripts/python"
 	pyDir         = "../../dub/py/"
+	xttsDone      = "xtts-done" // written only after the last round of takes
 )
 
 func pythonEnv(l lesson) []string {
@@ -85,12 +90,36 @@ func runFetch(l lesson) error {
 	return nil
 }
 
+// nextTake numbers a new round of takes. A number is never reused: it seeds the voice, so a repeat would sound the same.
+func nextTake(l lesson) int {
+	files, _ := filepath.Glob(l.At("out-full/xtts-takes/*-*.wav"))
+	top := 0
+	for _, f := range files {
+		_, take, _ := strings.Cut(strings.TrimSuffix(filepath.Base(f), ".wav"), "-")
+		if n, err := strconv.Atoi(take); err == nil && n > top {
+			top = n
+		}
+	}
+	return top + 1
+}
+
+func oneTake(l lesson, take int) error {
+	s := strconv.Itoa(take)
+	if err := runPython(l, ".venv-xtts/Scripts/python", "retry_xtts.py", s); err != nil {
+		return err
+	}
+	return runPython(l, whisperPython, "pick_xtts.py", s)
+}
+
 func runXTTS(l lesson) error {
 	if err := runPython(l, ".venv-xtts/Scripts/python", "full_xtts.py"); err != nil {
 		return err
 	}
 	if !exists(l.At("check-xtts-clone.first.json")) {
 		if err := runPython(l, whisperPython, "check_phrases.py", "xtts-clone"); err != nil {
+			return err
+		}
+		if err := runPython(l, whisperPython, "pick_xtts.py", "init"); err != nil {
 			return err
 		}
 		raw, err := os.ReadFile(l.At("check-xtts-clone.json"))
@@ -100,20 +129,92 @@ func runXTTS(l lesson) error {
 		if err := os.WriteFile(l.At("check-xtts-clone.first.json"), raw, 0o644); err != nil {
 			return err
 		}
-		if err := runPython(l, whisperPython, "pick_xtts.py", "init"); err != nil {
+	}
+	first := nextTake(l)
+	for take := first; take < first+4; take++ {
+		if err := oneTake(l, take); err != nil {
 			return err
 		}
 	}
-	for take := 1; take <= 4; take++ {
-		s := strconv.Itoa(take)
-		if err := runPython(l, ".venv-xtts/Scripts/python", "retry_xtts.py", s); err != nil {
-			return err
+	return os.WriteFile(l.At(xttsDone), nil, 0o644)
+}
+
+// runRetake makes one new take of the chosen phrases. It replaces the current audio whatever Whisper thinks of it:
+// the listener asked. The audio it replaces first goes to out-full/xtts-original or out-full/xtts-takes.
+func runRetake(l lesson, ids []string) error {
+	for _, id := range ids {
+		if _, err := strconv.Atoi(id); err != nil {
+			return fmt.Errorf("phrase number expected, got %q", id)
 		}
-		if err := runPython(l, whisperPython, "pick_xtts.py", s); err != nil {
-			return err
+	}
+	if err := runPython(l, whisperPython, "pick_xtts.py", append([]string{"redo"}, ids...)...); err != nil {
+		return err
+	}
+	return oneTake(l, nextTake(l))
+}
+
+// runFind lists the phrases holding a word, to repair by number.
+func runFind(l lesson, word string) error {
+	var ru []phrase
+	if err := readJSON(l.At("full-ru.json"), &ru); err != nil {
+		return err
+	}
+	word = strings.ToLower(word)
+	for _, p := range ru {
+		if strings.Contains(strings.ToLower(strings.ReplaceAll(p.RuMarked, "+", "")), word) {
+			fmt.Printf("%d\t%s\n", p.ID, p.RuMarked)
 		}
 	}
 	return nil
+}
+
+// newestFile is the time of the most recent file in a folder.
+func newestFile(dir string) (t time.Time) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return t
+	}
+	for _, e := range entries {
+		if info, err := e.Info(); err == nil && info.ModTime().After(t) {
+			t = info.ModTime()
+		}
+	}
+	return t
+}
+
+func modTime(path string) time.Time {
+	if info, err := os.Stat(path); err == nil {
+		return info.ModTime()
+	}
+	return time.Time{}
+}
+
+// fitCurrent says whether the built tracks already hold the current text and every voice.
+func fitCurrent(l lesson) bool {
+	built := filepath.Join(l.Out(), "tracks.json")
+	var info tracksFile
+	if readJSON(built, &info) != nil {
+		return false
+	}
+	at := modTime(built)
+	if modTime(l.At("full-ru.json")).After(at) {
+		return false
+	}
+	for _, voice := range voices {
+		dir := l.At("out-full/" + voice.id)
+		newest := newestFile(dir)
+		if newest.IsZero() {
+			continue
+		}
+		listed := false
+		for _, t := range info.Tracks {
+			listed = listed || t.ID == voice.id
+		}
+		if !listed || newest.After(at) {
+			return false
+		}
+	}
+	return true
 }
 
 func phrasesDone(l lesson, engine string) bool {
@@ -139,9 +240,12 @@ func runAll(ctx context.Context, l lesson) error {
 		{"accent", func() bool { return exists(l.At("full-ru-accent.json")) }, func() error { return runPython(l, ".venv-accent/Scripts/python", "accent_compare.py") }},
 		{"marks", func() bool { return exists(l.At("full-ru.claude.json")) }, func() error { return runMarks(l) }},
 		{"silero", func() bool { return phrasesDone(l, "silero-eugene") }, func() error { return runPython(l, ".venv-main/Scripts/python", "full_silero.py") }},
-		{"xtts", func() bool { return exists(l.At("check-xtts-clone.first.json")) }, func() error { return runXTTS(l) }},
-		{"fit", func() bool { return exists(filepath.Join(l.Out(), "tracks.json")) }, func() error { return runFit(l, false) }},
-		{"page", func() bool { return exists(filepath.Join(l.Out(), "index.html")) }, func() error { return runPage(l) }},
+		{"xtts", func() bool { return exists(l.At(xttsDone)) }, func() error { return runXTTS(l) }},
+		{"fit", func() bool { return fitCurrent(l) }, func() error { return runFit(l, false) }},
+		{"page", func() bool {
+			page := filepath.Join(l.Out(), "index.html")
+			return exists(page) && !modTime(filepath.Join(l.Out(), "tracks.json")).After(modTime(page))
+		}, func() error { return runPage(l) }},
 	}
 	for _, s := range steps {
 		if s.done() {
@@ -188,8 +292,17 @@ func run(args []string) error {
 	if err := fs.Parse(rest); err != nil {
 		return err
 	}
-	if fs.NArg() != 1 {
+	if fs.NArg() < 1 {
 		return fmt.Errorf("dub %s needs a lesson number", command)
+	}
+	extra := fs.Args()[1:]
+	switch {
+	case command == "retake" && len(extra) == 0:
+		return fmt.Errorf("dub retake needs phrase numbers: dub find shows them")
+	case command == "find" && len(extra) != 1:
+		return fmt.Errorf("dub find needs one word")
+	case command != "retake" && command != "find" && len(extra) != 0:
+		return fmt.Errorf("dub %s takes only a lesson number", command)
 	}
 	l, err := findLesson(fs.Arg(0))
 	if err != nil {
@@ -215,6 +328,10 @@ func run(args []string) error {
 		return runPython(l, ".venv-main/Scripts/python", "full_silero.py")
 	case "xtts":
 		return runXTTS(l)
+	case "retake":
+		return runRetake(l, extra)
+	case "find":
+		return runFind(l, extra[0])
 	case "fit":
 		return runFit(l, *stats)
 	case "page":

@@ -13,7 +13,7 @@ def load(path, *a, **k):  # torchaudio's torchcodec needs FFmpeg DLLs that are n
 
 torchaudio.load = load
 from TTS.api import TTS
-from marks import fix_marks, plain
+from marks import fix_marks, plain, respell
 
 out = at('out-full/xtts-clone')
 os.makedirs(out, exist_ok=True)
@@ -26,10 +26,12 @@ for n, p in enumerate(phrases, 1):
     if os.path.exists(path):
         continue
     try:
-        tts.tts_to_file(text=plain(fix_marks(p['ru_marked'])), speaker_wav='ref/ref25.wav', language='ru', file_path=path, split_sentences=False)
+        tts.tts_to_file(text=respell(plain(fix_marks(p['ru_marked']))), speaker_wav='ref/ref25.wav', language='ru', file_path=path, split_sentences=False)
     except Exception as e:
         failed.append(p['id'])
         print('failed', p['id'], repr(e)[:160], flush=True)
     if n % 25 == 0:
         print(f'{n} of {len(phrases)}, {time.time() - started:.0f} s', flush=True)
 print(f'xtts done in {time.time() - started:.0f} s, failed: {failed}', flush=True)
+if failed:
+    sys.exit('Some phrases failed: run again, finished ones are kept.')

@@ -12,7 +12,7 @@ def load(path, *a, **k):  # torchaudio's torchcodec needs FFmpeg DLLs that are n
 
 torchaudio.load = load
 from TTS.api import TTS
-from marks import fix_marks, plain
+from marks import fix_marks, plain, respell
 
 take = int(sys.argv[1])
 out = at('out-full/xtts-takes')
@@ -22,6 +22,6 @@ tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to('cuda')
 for p in json.load(open(at('full-ru.json'), encoding='utf-8')):
     if p['id'] in ids:
         torch.manual_seed(1000 * take + p['id'])
-        tts.tts_to_file(text=plain(fix_marks(p['ru_marked'])), speaker_wav='ref/ref25.wav', language='ru',
+        tts.tts_to_file(text=respell(plain(fix_marks(p['ru_marked']))), speaker_wav='ref/ref25.wav', language='ru',
                         file_path=f'{out}/{p["id"]:04d}-{take}.wav', split_sentences=False)
 print('takes done', take, len(ids), flush=True)

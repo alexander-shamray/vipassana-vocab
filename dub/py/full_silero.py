@@ -1,5 +1,5 @@
 """Silero eugene reads the whole lesson with the stress marks from the script."""
-import json, os, time
+import json, os, sys, time
 import soundfile as sf, torch
 from lessons import at
 from marks import fix_marks
@@ -21,3 +21,5 @@ for p in json.load(open(at('full-ru.json'), encoding='utf-8')):
         failed.append(p['id'])
         print('failed', p['id'], repr(e)[:160], flush=True)
 print(f'silero done in {time.time() - started:.0f} s, failed: {failed}', flush=True)
+if failed:
+    sys.exit('Some phrases failed: run again, finished ones are kept.')

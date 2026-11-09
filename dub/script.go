@@ -292,6 +292,11 @@ func runScript(ctx context.Context, l lesson) error {
 			todo = append(todo, stressItem{p.ID, p.Text})
 		}
 	}
+	if !exists(l.At("full-align.json")) || len(todo) > 0 {
+		if os.Getenv("ANTHROPIC_API_KEY") == "" && os.Getenv("ANTHROPIC_AUTH_TOKEN") == "" {
+			return errors.New("ANTHROPIC_API_KEY is not set: see docs/dub.md")
+		}
+	}
 	caller := &claudeCaller{client: anthropic.NewClient()}
 	var chunks [][]stressItem
 	for i := 0; i < len(todo); i += stressBatch {
@@ -373,6 +378,11 @@ func runScript(ctx context.Context, l lesson) error {
 	}
 	if err := writeJSON(l.At("full-ru.json"), ru); err != nil {
 		return err
+	}
+	for _, stale := range []string{"full-ru-accent.json", "full-ru.claude.json", "accent-diff.json"} { // made from the old text
+		if err := os.Remove(l.At(stale)); err != nil && !os.IsNotExist(err) {
+			return err
+		}
 	}
 	fmt.Printf("pairs %d, tokens %d in, %d out, about $%.2f\n", len(pairs), caller.input, caller.output, float64(caller.input)*4e-6+float64(caller.output)*20e-6)
 	return nil

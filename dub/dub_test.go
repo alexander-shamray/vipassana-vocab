@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestFixMarks(t *testing.T) {
@@ -19,12 +20,69 @@ func TestFixMarks(t *testing.T) {
 		"вс+ё":     "всё",
 		"м+ол+око": "м+олоко",
 		"сл+н":     "слн",
-		"а а а":    "а а",
+		"вы чувствуете, что что-то меняется": "вы чувствуете, что что-то меняется", // "что" and "что-то"
+		"а а а": "а а",
 	}
 	for in, want := range cases {
 		if got := fixMarks(in); got != want {
 			t.Errorf("fixMarks(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestNextTakeNeverReusesANumber(t *testing.T) {
+	dir := t.TempDir() // first: the folder can be removed only after the test leaves it
+	cwd, _ := os.Getwd()
+	t.Cleanup(func() { os.Chdir(cwd) })
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	l := lesson{N: 4}
+	if got := nextTake(l); got != 1 {
+		t.Errorf("no takes yet: %d", got)
+	}
+	os.MkdirAll(l.At("out-full/xtts-takes"), 0o755)
+	os.WriteFile(l.At("out-full/xtts-takes/0012-3.wav"), nil, 0o644)
+	os.WriteFile(l.At("out-full/xtts-takes/0040-11.wav"), nil, 0o644)
+	if got := nextTake(l); got != 12 {
+		t.Errorf("got %d, want 12", got)
+	}
+}
+
+func TestFitCurrentSeesANewVoiceAndNewAudio(t *testing.T) {
+	dir := t.TempDir() // first: the folder can be removed only after the test leaves it
+	cwd, _ := os.Getwd()
+	t.Cleanup(func() { os.Chdir(cwd) })
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	l := lesson{N: 4}
+	old := time.Now().Add(-time.Hour)
+	os.MkdirAll(l.Out(), 0o755)
+	os.MkdirAll(l.At("out-full/silero-eugene"), 0o755)
+	wav := l.At("out-full/silero-eugene/0000.wav")
+	os.WriteFile(wav, nil, 0o644)
+	os.Chtimes(wav, old, old)
+	os.WriteFile(l.At("full-ru.json"), []byte("[]"), 0o644)
+	os.Chtimes(l.At("full-ru.json"), old, old)
+	writeJSON(l.Out()+"/tracks.json", tracksFile{Tracks: []trackInfo{{ID: "silero-eugene"}}})
+	if !fitCurrent(l) {
+		t.Error("nothing changed, must be current")
+	}
+	os.MkdirAll(l.At("out-full/xtts-clone"), 0o755)
+	os.WriteFile(l.At("out-full/xtts-clone/0000.wav"), nil, 0o644)
+	os.Chtimes(l.At("out-full/xtts-clone/0000.wav"), old, old)
+	if fitCurrent(l) {
+		t.Error("a voice not in the tracks must rebuild")
+	}
+	writeJSON(l.Out()+"/tracks.json", tracksFile{Tracks: []trackInfo{{ID: "silero-eugene"}, {ID: "xtts-clone"}}})
+	if !fitCurrent(l) {
+		t.Error("both voices built, must be current")
+	}
+	future := time.Now().Add(time.Hour)
+	os.Chtimes(wav, future, future)
+	if fitCurrent(l) {
+		t.Error("newer audio must rebuild")
 	}
 }
 

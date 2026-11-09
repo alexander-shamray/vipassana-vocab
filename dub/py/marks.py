@@ -1,5 +1,5 @@
 """Stress marks: "+" before the stressed vowel. The dub command applies the same rules in marks.go."""
-import re
+import json, re
 
 
 def fix_marks(text):
@@ -7,7 +7,7 @@ def fix_marks(text):
     Also drops a word said twice with nothing between ("это это"): the narrator's stumble, not the text."""
     vowels = 'аеиоуыэюя'
     text = re.sub('[\u200b-\u200d\ufeff]', '', text)
-    text = re.sub(r'(?i)(?<![\w+])([\w+]+) \1(?![\w+])', r'\1', text)
+    text = re.sub(r'(?i)(?<![\w+])([\w+]+) \1(?![\w+-])', r'\1', text)
 
     def word(m):
         w = m.group(0)
@@ -30,3 +30,22 @@ def fix_marks(text):
 
 def plain(s):
     return s.replace('+', '')
+
+
+_RESPELL = None
+
+
+def respell(text):
+    """XTTS has no stress mark: a word it misreads can only be spelled as it sounds. dub/xtts-respell.json, XTTS only."""
+    global _RESPELL
+    if _RESPELL is None:
+        with open('../../dub/xtts-respell.json', encoding='utf-8') as f:
+            _RESPELL = {k.lower(): v for k, v in json.load(f).items()}
+
+    def one(m):
+        new = _RESPELL.get(m.group(0).lower())
+        if new is None:
+            return m.group(0)
+        return new[0].upper() + new[1:] if m.group(0)[0].isupper() else new
+
+    return re.sub(r'[а-яёА-ЯЁ]+', one, text)

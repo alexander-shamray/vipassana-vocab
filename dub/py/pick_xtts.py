@@ -31,6 +31,14 @@ if arg == 'init':
     json.dump(ids, open(at('retry.json'), 'w'))
     print('suspects', len(ids), 'forced', forced)
     sys.exit()
+if arg == 'redo':  # the listener chose these phrases: the next take replaces them whatever it scores
+    ids = [int(x) for x in sys.argv[2:]]
+    for i in ids:
+        rows[i].pop('taken', None)
+    json.dump(ids, open(at('retry.json'), 'w'))
+    json.dump(ids, open(at('retry-forced.json'), 'w'))
+    json.dump(data, open(CHECK, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    sys.exit()
 
 from vv_pipeline import transcribe as tr
 tr.use_pip_cuda()
@@ -48,7 +56,7 @@ for path in sorted(glob.glob(at(f'out-full/xtts-takes/*-{take}.wav'))):
     seconds = sf.info(path).duration
     old = rows[i]
     first = i in forced and not old.get('taken')
-    if first or (errs(i, heard), seconds) < (errs(i, old['heard']), old['seconds']):
+    if first or (errs(i, heard), round(seconds, 2)) < (errs(i, old['heard']), old['seconds']):
         current = at(f'out-full/xtts-clone/{i:04d}.wav')
         keep = at(f'out-full/xtts-original/{i:04d}.wav')
         if not os.path.exists(keep):

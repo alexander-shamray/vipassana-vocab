@@ -258,6 +258,9 @@ func engineClips(l lesson, engine string, ru []phrase) ([][]float32, error) {
 	return out, nil
 }
 
+// voices are the synthesized tracks, built when their folders exist.
+var voices = []struct{ id, title string }{{"silero-eugene", "Silero eugene"}, {"xtts-clone", "XTTS, клон голоса"}}
+
 var durationRe = regexp.MustCompile(`Duration: (\d+):(\d+):(\d+(?:\.\d+)?)`)
 
 func mediaSeconds(path string) (float64, error) {
@@ -337,7 +340,7 @@ func runFit(l lesson, statsOnly bool) error {
 		clips     func() ([][]float32, error)
 	}
 	tracks := []track{{"narrator", "Русский диктор", func() ([][]float32, error) { return narratorClips(l, ru) }}}
-	for _, e := range []struct{ id, title string }{{"silero-eugene", "Silero eugene"}, {"xtts-clone", "XTTS, клон голоса"}} {
+	for _, e := range voices {
 		if st, err := os.Stat(l.At("out-full/" + e.id)); err == nil && st.IsDir() {
 			tracks = append(tracks, track{e.id, e.title, func() ([][]float32, error) { return engineClips(l, e.id, ru) }})
 		} else {
@@ -350,6 +353,19 @@ func runFit(l lesson, statsOnly bool) error {
 		clips, err := t.clips()
 		if err != nil {
 			return err
+		}
+		var missing []int
+		for i, c := range clips {
+			if c == nil {
+				missing = append(missing, ru[i].ID)
+			}
+		}
+		if len(missing) == len(clips) {
+			fmt.Println("no voice yet:", t.id)
+			continue
+		}
+		if len(missing) > 0 {
+			fmt.Println("WARNING:", t.id, "has no audio for phrases", missing, "and will be silent there")
 		}
 		buf, stats, err := layOut(clips, targets, total)
 		if err != nil {
