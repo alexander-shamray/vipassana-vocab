@@ -31,6 +31,21 @@ jobs:
         with:
           working-directory: app
 
+  dub:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dub
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: dub/go.mod
+          cache-dependency-path: dub/go.sum
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race ./...
+
   pipeline:
     runs-on: ubuntu-latest
     defaults:

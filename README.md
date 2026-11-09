@@ -23,6 +23,7 @@
 | `app/` | Сайт: Go + templ + HTMX + SQLite. |
 | `pipeline/` | Python: YouTube → расшифровка (Whisper) → леммы (spaCy) → перевод (Claude) → озвучка (Azure) → `dictionary/words.jsonl`. См. [pipeline/README.md](pipeline/README.md). |
 | `dictionary/` | `words.jsonl` — собранный словарь, единственный результат пайплайна в git. |
+| `dub/` | Go и Python: русская озвучка уроков для личного прослушивания. См. [docs/dub.md](docs/dub.md). |
 | `docs/` | [Проектный документ](docs/superpowers/specs/2026-11-07-vipassana-vocab-design.md), [планы](docs/superpowers/plans/), [деплой](docs/deploy.md). |
 | `testdata/` | Общие для Go и Python тестовые случаи нормализации текста. |
 
