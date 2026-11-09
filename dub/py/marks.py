@@ -32,6 +32,12 @@ def plain(s):
     return s.replace('+', '')
 
 
+def xtts_text(marked):
+    """The text XTTS reads: no marks and no quotation marks, which it voices as stray syllables ("Нет" becomes "Я нет").
+    On lessons 1 and 4, phrases with quotation marks got extra words 60% of the time, the others about 15%."""
+    return respell(re.sub('[«»„“”"]', '', plain(fix_marks(marked))))
+
+
 _RESPELL = None
 
 
