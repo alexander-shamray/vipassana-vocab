@@ -30,3 +30,6 @@ dictionary/examples.jsonl
 
 # pip install -e metadata
 *.egg-info/
+
+# Dub command build output
+dub/bin/
