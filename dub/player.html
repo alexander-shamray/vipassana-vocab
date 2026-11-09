@@ -16,6 +16,7 @@ p{color:var(--muted);font-size:.9rem;margin:10px 0 0}
 <video id=v controls preload=metadata muted src=video.mp4></video>
 <div class=panel>@ROWS@</div>
 <p>Галочка включает дорожку, ползунок задаёт её громкость. Звук самого видео отключён: все голоса идут через эти дорожки. Настройки запоминаются. Пробел: пауза.</p>
+<p><label class=on><input type=checkbox id=split> Разделить по наушникам: оригинал слева, русский справа</label> <span id=split-note></span></p>
 <script>
 const v = document.getElementById('v');
 const tracks = [...document.querySelectorAll('audio[data-track]')];
@@ -23,12 +24,34 @@ const key = 'lesson@N@-mix';
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(key)) || {}; } catch (e) {}
 const save = () => { try { localStorage.setItem(key, JSON.stringify(saved)); } catch (e) {} };
+// Web Audio routes each track to one ear. Once wired, an element plays only through the graph, so turning the split off
+// centres the sound instead of unwiring. Browsers send silence for media opened from file://, so there it stays off.
+const split = document.getElementById('split');
+const canSplit = location.protocol !== 'file:' && 'AudioContext' in window;
+const graph = new Map();
+window.playerGraph = graph;
+let audio = null;
+function wire() {
+  if (audio) return;
+  audio = new AudioContext();
+  tracks.forEach(a => {
+    const gain = audio.createGain();
+    const pan = audio.createStereoPanner();
+    audio.createMediaElementSource(a).connect(gain).connect(pan).connect(audio.destination);
+    graph.set(a.dataset.track, {gain, pan});
+  });
+}
+// A browser keeps the graph asleep until a touch or a key press.
+const wake = () => { if (audio && audio.state === 'suspended') audio.resume().catch(() => {}); };
+['pointerdown', 'touchend', 'click', 'keydown'].forEach(e => document.addEventListener(e, wake, true));
 function apply(id) {
   const a = document.querySelector(`audio[data-track="${id}"]`);
   const on = document.querySelector(`[data-on="${id}"]`);
   const vol = document.querySelector(`[data-vol="${id}"]`);
   a.muted = !on.checked;
-  a.volume = vol.value / 100;
+  const wired = graph.get(id);
+  if (wired) wired.gain.gain.value = vol.value / 100; // the gain also works on iPhone, where a.volume is read-only
+  a.volume = wired ? 1 : vol.value / 100;
   vol.disabled = !on.checked;
   document.querySelector(`[data-out="${id}"]`).textContent = on.checked ? vol.value + '%' : 'выкл';
   saved[id] = {on: on.checked, vol: +vol.value};
@@ -43,8 +66,20 @@ tracks.forEach(a => {
   vol.addEventListener('input', () => apply(id));
   apply(id);
 });
+function applySplit() {
+  if (split.checked) wire();
+  graph.forEach((g, id) => { g.pan.pan.value = !split.checked ? 0 : id === 'english' ? -1 : 1; });
+  tracks.forEach(a => apply(a.dataset.track));
+  saved.split = split.checked;
+  save();
+}
+split.disabled = !canSplit;
+split.checked = canSplit && saved.split !== false;
+if (!canSplit) document.getElementById('split-note').textContent = 'Работает, только если открыть плеер через dub serve.';
+split.addEventListener('change', () => { wake(); applySplit(); });
+applySplit();
 const seekAll = () => tracks.forEach(a => { a.currentTime = Math.min(v.currentTime, a.duration || Infinity); });
-const playAll = () => { seekAll(); tracks.forEach(a => { a.playbackRate = v.playbackRate; a.play().catch(() => {}); }); };
+const playAll = () => { wake(); seekAll(); tracks.forEach(a => { a.playbackRate = v.playbackRate; a.play().catch(() => {}); }); };
 const pauseAll = () => tracks.forEach(a => a.pause());
 v.addEventListener('play', playAll);
 v.addEventListener('playing', playAll);
