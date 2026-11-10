@@ -194,12 +194,18 @@ func runMarks(l lesson) error {
 	var out []phrase
 	var dropped []int
 	for _, p := range src {
+		ours := fixMarks(p.RuMarked)
 		var theirs []string
 		if !p.Misaligned {
 			theirs = markedWord.FindAllString(p.RuAccent, -1)
 		}
+		// Words are paired by position. A different count means RuAccent read other words, for example a text from
+		// before a repeated word was dropped; pairing it would put each mark on a neighbour, so its marks are not used.
+		if len(theirs) != len(markedWord.FindAllString(ours, -1)) {
+			theirs = nil
+		}
 		k := 0
-		marked := markedWord.ReplaceAllStringFunc(fixMarks(p.RuMarked), func(w string) string {
+		marked := markedWord.ReplaceAllStringFunc(ours, func(w string) string {
 			other := ""
 			if k < len(theirs) {
 				other = theirs[k]

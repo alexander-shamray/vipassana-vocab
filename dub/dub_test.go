@@ -246,3 +246,29 @@ func TestLoudnessMatching(t *testing.T) {
 		t.Errorf("a limiter when raising: %q", f)
 	}
 }
+
+func TestMarksIgnoreRuAccentWhenItReadOtherWords(t *testing.T) {
+	dir := t.TempDir()
+	cwd, _ := os.Getwd()
+	t.Cleanup(func() { os.Chdir(cwd) })
+	home := filepath.Join(dir, "data", "dub-pilot")
+	os.MkdirAll(filepath.Join(dir, "dub"), 0o755)
+	os.MkdirAll(filepath.Join(home, "work4"), 0o755)
+	os.WriteFile(filepath.Join(dir, "dub", "stress-fixes.json"), []byte("[]"), 0o644)
+	if err := os.Chdir(home); err != nil {
+		t.Fatal(err)
+	}
+	l := lesson{N: 4}
+	id := 0
+	// RuAccent read the text before "это это" lost its repeat: one word more than ours.
+	writeJSON(l.At("full-ru-accent.json"), []phrase{{ID: 0, EnID: &id, RuMarked: "+Это +это невозм+ожно.", RuAccent: "+Это +это невозм+ожно."}})
+	writeJSON(l.At("full-ru.json"), []phrase{})
+	if err := runMarks(l); err != nil {
+		t.Fatal(err)
+	}
+	var got []phrase
+	readJSON(l.At("full-ru.json"), &got)
+	if len(got) != 1 || got[0].RuMarked != "+Это невозм+ожно." {
+		t.Errorf("got %+v, want Claude's marks on every word", got)
+	}
+}
