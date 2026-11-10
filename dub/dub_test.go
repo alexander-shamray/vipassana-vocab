@@ -252,7 +252,8 @@ func TestMarksIgnoreRuAccentWhenItReadOtherWords(t *testing.T) {
 	cwd, _ := os.Getwd()
 	t.Cleanup(func() { os.Chdir(cwd) })
 	home := filepath.Join(dir, "data", "dub-pilot")
-	os.MkdirAll(filepath.Join(dir, "dub"), 0o755)
+	// The fixes path is built through dub/py, which Linux resolves only when that folder exists.
+	os.MkdirAll(filepath.Join(dir, "dub", "py"), 0o755)
 	os.MkdirAll(filepath.Join(home, "work4"), 0o755)
 	os.WriteFile(filepath.Join(dir, "dub", "stress-fixes.json"), []byte("[]"), 0o644)
 	if err := os.Chdir(home); err != nil {
