@@ -110,6 +110,7 @@ func TestMarkProblems(t *testing.T) {
 		"н++ет":                 true,  // two marks, one not before a vowel
 		"вс+ё":                  true,  // a mark in a ё word
 		"день 5":                true,  // a digit
+		"ритु+алы":              true,  // a Devanagari vowel sign
 		"день":                  false, // one vowel
 	}
 	for in, bad := range cases {
@@ -218,5 +219,30 @@ func TestServeOnlyThePlayers(t *testing.T) {
 		if code, _ := get(path, ""); code == 200 {
 			t.Errorf("%s must not be served", path)
 		}
+	}
+}
+
+func TestLoudnessMatching(t *testing.T) {
+	report := "[Parsed_ebur128_1] Summary:\n\n  Integrated loudness:\n    I:         -22.0 LUFS\n    Threshold: -32.4 LUFS\n"
+	if got, err := parseLoudness(report); err != nil || got != -22 {
+		t.Errorf("parseLoudness = %v, %v", got, err)
+	}
+	if _, err := parseLoudness("no summary"); err == nil {
+		t.Error("a report without loudness must fail")
+	}
+	if got := matchGain(-22, -18.4); got != 3.6 {
+		t.Errorf("a quieter track is raised: %v", got)
+	}
+	if got := matchGain(-15, -19.4); got != -4.4 {
+		t.Errorf("a louder track is lowered: %v", got)
+	}
+	if got := matchGain(-50, -18); got != 12 {
+		t.Errorf("the raise is capped: %v", got)
+	}
+	if f := gainFilter(-4.4); f != "volume=-4.40dB" {
+		t.Errorf("no limiter when lowering: %q", f)
+	}
+	if f := gainFilter(3.6); !strings.Contains(f, "alimiter") {
+		t.Errorf("a limiter when raising: %q", f)
 	}
 }

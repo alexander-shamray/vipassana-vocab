@@ -128,6 +128,12 @@ func markProblems(text string) []string {
 	if latinOrDigit.MatchString(text) {
 		bad = append(bad, "latin-or-digit")
 	}
+	for _, r := range text {
+		if unicode.IsLetter(r) && !unicode.Is(unicode.Cyrillic, r) || unicode.Is(unicode.Mn, r) {
+			bad = append(bad, "not-cyrillic") // once Claude wrote "ритु+алы", with a Devanagari vowel sign
+			break
+		}
+	}
 	return bad
 }
 
