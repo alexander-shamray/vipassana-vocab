@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -271,5 +272,30 @@ func TestMarksIgnoreRuAccentWhenItReadOtherWords(t *testing.T) {
 	readJSON(l.At("full-ru.json"), &got)
 	if len(got) != 1 || got[0].RuMarked != "+Это невозм+ожно." {
 		t.Errorf("got %+v, want Claude's marks on every word", got)
+	}
+}
+
+func TestShortenPausesCutsOnlyLongInnerPauses(t *testing.T) {
+	tone := func(sec float64) []float32 {
+		a := make([]float32, int(sec*sampleRate))
+		for i := range a {
+			a[i] = 0.5
+		}
+		return a
+	}
+	gap := func(sec float64) []float32 { return make([]float32, int(sec*sampleRate)) }
+	var a []float32
+	a = append(a, tone(0.5)...)
+	a = append(a, gap(1.0)...) // long: cut to 0.3 s
+	a = append(a, tone(0.5)...)
+	a = append(a, gap(0.2)...) // short: kept
+	a = append(a, tone(0.5)...)
+	got := float64(len(shortenPauses(a, 0.3))) / sampleRate
+	if want := 0.5 + 0.3 + 0.5 + 0.2 + 0.5; math.Abs(got-want) > 0.02 {
+		t.Errorf("length %.3f s, want %.3f s", got, want)
+	}
+	quiet := append(gap(1.0), tone(0.5)...) // a pause at an edge is trimSilence's business
+	if n := len(shortenPauses(quiet, 0.3)); n != len(quiet) {
+		t.Errorf("edge pause changed: %d samples, want %d", n, len(quiet))
 	}
 }
