@@ -17,7 +17,7 @@ import (
 var playerTemplate string
 
 // Sound of each track when the page first opens; 0 means off. The visitor's own settings are remembered in the browser.
-var trackDefaults = map[string]int{"english": 15, "narrator": 0, "silero-eugene": 100, "xtts-clone": 0}
+var trackDefaults = map[string]int{"english": 100, "narrator": 0, "silero-eugene": 100, "xtts-clone": 0}
 
 // runPage writes the player: a video and independent audio tracks, each with its own volume and off switch.
 func runPage(l lesson) error {

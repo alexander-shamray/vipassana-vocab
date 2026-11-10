@@ -20,7 +20,7 @@ p{color:var(--muted);font-size:.9rem;margin:10px 0 0}
 <script>
 const v = document.getElementById('v');
 const tracks = [...document.querySelectorAll('audio[data-track]')];
-const key = 'lesson@N@-mix';
+const key = 'lesson@N@-mix-2'; // -2: the tracks became as loud as the original, the old sliders no longer fit
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(key)) || {}; } catch (e) {}
 const save = () => { try { localStorage.setItem(key, JSON.stringify(saved)); } catch (e) {} };
@@ -37,6 +37,9 @@ function wire() {
   tracks.forEach(a => {
     const gain = audio.createGain();
     const pan = audio.createStereoPanner();
+    // Fold the stereo original to mono first: panned as stereo, both its channels land in one ear and it sounds louder.
+    pan.channelCount = 1;
+    pan.channelCountMode = 'explicit';
     audio.createMediaElementSource(a).connect(gain).connect(pan).connect(audio.destination);
     graph.set(a.dataset.track, {gain, pan});
   });

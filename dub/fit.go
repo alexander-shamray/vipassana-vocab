@@ -121,6 +121,7 @@ type fitStats struct {
 	LateP90    float64 `json:"late_p90_s"`
 	LateMax    float64 `json:"late_max_s"`
 	EndS       float64 `json:"end_s"`
+	GainDB     float64 `json:"gain_db"` // brings the track to the loudness of the original
 }
 
 func round1(x float64) float64 { return math.Round(x*10) / 10 }
@@ -177,7 +178,7 @@ func layOut(clips [][]float32, targets []float64, total float64) ([]float32, fit
 	if speech > 0 {
 		rms = math.Sqrt(sum / float64(speech))
 	}
-	gain := float32(0.1 / max(rms, 1e-6)) // about -20 dB, so the sliders start level
+	gain := float32(0.1 / max(rms, 1e-6)) // a working level; the final gain matches the original
 	for i, v := range buf {
 		buf[i] = min(max(v*gain, -0.98), 0.98)
 	}
@@ -282,8 +283,46 @@ type trackInfo struct {
 }
 
 type tracksFile struct {
-	Tracks []trackInfo         `json:"tracks"`
-	Report map[string]fitStats `json:"report"`
+	Tracks      []trackInfo         `json:"tracks"`
+	Report      map[string]fitStats `json:"report"`
+	EnglishLUFS float64             `json:"english_lufs,omitempty"`
+}
+
+var integratedRe = regexp.MustCompile(`I:\s+(-?\d+(?:\.\d+)?) LUFS`)
+
+// parseLoudness reads the integrated loudness from the summary ffmpeg's ebur128 filter prints at the end.
+func parseLoudness(report string) (float64, error) {
+	m := integratedRe.FindAllStringSubmatch(report, -1)
+	if m == nil {
+		return 0, fmt.Errorf("no integrated loudness in ffmpeg's report")
+	}
+	return strconv.ParseFloat(m[len(m)-1][1], 64)
+}
+
+// loudness measures integrated loudness by EBU R128, the way people hear it: quiet passages and pauses are gated out.
+// A mono track is measured as two equal channels, like a stereo recording of one voice.
+func loudness(input ...string) (float64, error) {
+	args := append([]string{"-hide_banner", "-nostats"}, input...)
+	args = append(args, "-af", "aformat=channel_layouts=stereo,ebur128=framelog=quiet", "-f", "null", "-")
+	output, err := exec.Command(ffmpegPath(), args...).CombinedOutput()
+	if err != nil {
+		return 0, fmt.Errorf("ffmpeg loudness %v: %w: %s", input, err, output)
+	}
+	return parseLoudness(string(output))
+}
+
+// matchGain is the gain that brings a track to the loudness of the original, never more than +12 dB.
+func matchGain(track, original float64) float64 {
+	return math.Round(min(original-track, 12)*100) / 100
+}
+
+// gainFilter applies the gain; a limiter keeps a raised track from clipping.
+func gainFilter(db float64) string {
+	f := fmt.Sprintf("volume=%.2fdB", db)
+	if db > 0 {
+		f += ",alimiter=limit=0.95:level=false"
+	}
+	return f
 }
 
 func writeFloats(path string, a []float32) error {
@@ -348,6 +387,15 @@ func runFit(l lesson, statsOnly bool) error {
 		}
 	}
 	report := map[string]fitStats{}
+	englishAudio := "../audio/" + l.En + ".m4a"
+	englishLUFS := 0.0
+	if !statsOnly {
+		var err error
+		if englishLUFS, err = loudness("-i", englishAudio); err != nil {
+			return err
+		}
+		fmt.Printf("original: %.1f LUFS\n", englishLUFS)
+	}
 	list := []trackInfo{{"english", "Гоенка, оригинал"}}
 	for _, t := range tracks {
 		clips, err := t.clips()
@@ -371,22 +419,32 @@ func runFit(l lesson, statsOnly bool) error {
 		if err != nil {
 			return err
 		}
-		report[t.id] = stats
 		list = append(list, trackInfo{t.id, t.title})
-		line, _ := json.Marshal(stats)
-		fmt.Println(t.id, string(line))
 		if statsOnly {
+			report[t.id] = stats
+			line, _ := json.Marshal(stats)
+			fmt.Println(t.id, string(line))
 			continue
 		}
 		tmp := filepath.Join(out, t.id+".f32")
 		if err := writeFloats(tmp, buf); err != nil {
 			return err
 		}
-		_, err = ffmpeg(nil, "-y", "-f", "f32le", "-ar", strconv.Itoa(sampleRate), "-ac", "1", "-i", tmp, "-c:a", "aac", "-b:a", "96k", filepath.Join(out, t.id+".m4a"))
+		raw := []string{"-f", "f32le", "-ar", strconv.Itoa(sampleRate), "-ac", "1", "-i", tmp}
+		measured, err := loudness(raw...)
+		if err != nil {
+			os.Remove(tmp)
+			return err
+		}
+		stats.GainDB = matchGain(measured, englishLUFS)
+		_, err = ffmpeg(nil, append(append([]string{"-y"}, raw...), "-af", gainFilter(stats.GainDB), "-c:a", "aac", "-b:a", "96k", filepath.Join(out, t.id+".m4a"))...)
 		os.Remove(tmp)
 		if err != nil {
 			return err
 		}
+		report[t.id] = stats
+		line, _ := json.Marshal(stats)
+		fmt.Println(t.id, string(line))
 	}
 	if statsOnly {
 		return nil
@@ -395,7 +453,7 @@ func runFit(l lesson, statsOnly bool) error {
 	if _, err := ffmpeg(nil, "-y", "-i", video, "-an", "-c:v", "copy", "-movflags", "+faststart", videoOut); err != nil {
 		return err
 	}
-	if _, err := ffmpeg(nil, "-y", "-i", "../audio/"+l.En+".m4a", "-c:a", "copy", englishOut); err != nil {
+	if _, err := ffmpeg(nil, "-y", "-i", englishAudio, "-c:a", "copy", englishOut); err != nil {
 		return err
 	}
 	args := []string{"-y", "-i", videoOut, "-i", englishOut}
@@ -413,5 +471,5 @@ func runFit(l lesson, statsOnly bool) error {
 	if _, err := ffmpeg(nil, args...); err != nil {
 		return err
 	}
-	return writeJSON(filepath.Join(out, "tracks.json"), tracksFile{list, report})
+	return writeJSON(filepath.Join(out, "tracks.json"), tracksFile{list, report, englishLUFS})
 }

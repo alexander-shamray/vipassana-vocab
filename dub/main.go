@@ -77,8 +77,9 @@ func runFetch(l lesson) error {
 	if err := download("135/bv*[height<=480][ext=mp4]", l.At("en-video-480.mp4"), l.En); err != nil {
 		return fmt.Errorf("English video: %w", err)
 	}
-	// The narration also comes with an automatic English dub under the same format numbers: ask for the language.
-	if err := download("ba[ext=m4a][language^=ru]", l.At(l.RuMediaName()), l.Ru); err != nil {
+	// Some narrations also come with an automatic English dub under the same format numbers: ask for the language.
+	// Others have one untagged track, the narration itself. "dub script" refuses text that is not Russian.
+	if err := download("ba[ext=m4a][language^=ru]/140", l.At(l.RuMediaName()), l.Ru); err != nil {
 		return fmt.Errorf("Russian narration: %w", err)
 	}
 	if !exists("../audio/" + l.En + ".m4a") {
