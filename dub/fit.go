@@ -17,10 +17,12 @@ import (
 )
 
 const (
-	sampleRate = 48000
-	phraseGap  = 0.12
-	maxTempo   = 1.25
-	tempoSpan  = 60.0
+	sampleRate   = 48000
+	phraseGap    = 0.12
+	maxTempo     = 1.3 // faster blurs the words
+	tempoSpan    = 60.0
+	catchUp      = 30.0 // a track this many seconds late speeds up by a whole 1.0: falling behind costs more than speed
+	longestPause = 0.2  // inside a synthesized phrase
 )
 
 // ffmpegPath prefers the copy in bin/, then the one on PATH.
@@ -100,6 +102,46 @@ func trimSilence(a []float32) []float32 {
 	return a[max(0, first-int(.02*sampleRate)):min(len(a), last+int(.08*sampleRate))]
 }
 
+// shortenPauses cuts every pause inside a phrase down to longest seconds, keeping its two ends. XTTS pauses long at
+// commas: over a lesson that is eight minutes the English has no room for.
+func shortenPauses(a []float32, longest float64) []float32 {
+	const frame = sampleRate / 100
+	var peak float32
+	for _, v := range a {
+		peak = max(peak, abs32(v))
+	}
+	limit := 0.02 * max(peak, 1e-6)
+	silent := func(f int) bool {
+		for _, v := range a[f*frame : min((f+1)*frame, len(a))] {
+			if abs32(v) > limit {
+				return false
+			}
+		}
+		return true
+	}
+	keep := int(longest * sampleRate / 2)
+	frames := (len(a) + frame - 1) / frame
+	out := make([]float32, 0, len(a))
+	from := 0 // start of the audio not yet copied
+	for f := 0; f < frames; {
+		if !silent(f) {
+			f++
+			continue
+		}
+		g := f
+		for g < frames && silent(g) {
+			g++
+		}
+		start, end := f*frame, min(g*frame, len(a))
+		if f > 0 && g < frames && end-start > 2*keep {
+			out = append(out, a[from:start+keep]...)
+			from = end - keep
+		}
+		f = g
+	}
+	return append(out, a[from:]...)
+}
+
 // speedUp changes tempo, not pitch.
 func speedUp(a []float32, tempo float64) ([]float32, error) {
 	if tempo <= 1.001 {
@@ -153,7 +195,7 @@ func layOut(clips [][]float32, targets []float64, total float64) ([]float32, fit
 			end = targets[j]
 		}
 		ratio := need / max(end-targets[i]-lateness, 1.0)
-		tempo := min(max(max(ratio, 1.0)+lateness/120.0, 1.0), maxTempo)
+		tempo := min(max(max(ratio, 1.0)+lateness/catchUp, 1.0), maxTempo)
 		a, err := speedUp(c, tempo)
 		if err != nil {
 			return nil, fitStats{}, err
@@ -247,7 +289,7 @@ func engineClips(l lesson, engine string, ru []phrase) ([][]float32, error) {
 				errs[i] = err
 				return
 			}
-			out[i] = trimSilence(a)
+			out[i] = shortenPauses(trimSilence(a), longestPause)
 		}()
 	}
 	wg.Wait()
