@@ -1,5 +1,5 @@
 """Stress marks: "+" before the stressed vowel. The dub command applies the same rules in marks.go."""
-import json, re
+import json, os, re
 
 
 def fix_marks(text):
@@ -45,7 +45,7 @@ def respell(text):
     """XTTS has no stress mark: a word it misreads can only be spelled as it sounds. dub/xtts-respell.json, XTTS only."""
     global _RESPELL
     if _RESPELL is None:
-        with open('../../dub/xtts-respell.json', encoding='utf-8') as f:
+        with open(os.path.join(os.environ.get('DUB_REPO', '../..'), 'dub', 'xtts-respell.json'), encoding='utf-8') as f:
             _RESPELL = {k.lower(): v for k, v in json.load(f).items()}
 
     def one(m):

@@ -2,7 +2,7 @@
 so a garbled, cut or babbling phrase shows up by id instead of disappearing in a whole-lesson average."""
 import json, os, re, sys
 import soundfile as sf
-sys.path.insert(0, '../../pipeline')
+sys.path.insert(0, os.path.join(os.environ.get('DUB_REPO', '../..'), 'pipeline'))
 from check_phrases_lib import distance, norm
 from lessons import at
 sys.stdout.reconfigure(encoding='utf-8')

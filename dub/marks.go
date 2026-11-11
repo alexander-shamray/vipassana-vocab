@@ -2,11 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -135,7 +138,7 @@ func writeJSON(path string, v any) error {
 
 func loadFixes() (map[string]int, error) {
 	var list []string
-	if err := readJSON(pyDir+"../stress-fixes.json", &list); err != nil {
+	if err := readJSON(filepath.Join(repo, "dub", "stress-fixes.json"), &list); err != nil {
 		return nil, err
 	}
 	fixes := make(map[string]int, len(list))
@@ -171,10 +174,36 @@ func markWord(claude, ruaccent string, fixes map[string]int, counts map[string]i
 
 // runMarks writes the final stress marks. RuAccent's win over Claude's: on 137 disagreeing word forms in lesson 1
 // Claude's were mostly wrong. Words reviewed by hand in stress-fixes.json win over both.
+// phraseFix removes, for one lesson, Russian phrases the English talk does not have, and mends the text around them.
+type phraseFix struct {
+	Why     string               `json:"why"`
+	Drop    []int                `json:"drop"`
+	Replace map[string][2]string `json:"replace"` // phrase id: [old, new], in the marked text
+}
+
+func loadPhraseFixes(l lesson) (phraseFix, error) {
+	var all map[string]phraseFix
+	if err := readJSON(filepath.Join(repo, "dub", "phrase-fixes.json"), &all); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return phraseFix{}, err
+	}
+	return all[strconv.Itoa(l.N)], nil
+}
+
+// subtitleCredit is what Whisper writes into silence: credits from the subtitles it learnt on, not speech.
+var subtitleCredit = regexp.MustCompile(`(?i)^(\s*(субтитры (создавал|делал|сделал|подготовил)[^.!?…]*|продолжение следует|редактор субтитров.*)[.!?…]*)+\s*$`)
+
 func runMarks(l lesson) error {
 	var src []phrase
 	if err := readJSON(l.At("full-ru-accent.json"), &src); err != nil {
 		return fmt.Errorf("run dub accent first: %w", err)
+	}
+	pf, err := loadPhraseFixes(l)
+	if err != nil {
+		return err
+	}
+	drop := map[int]bool{}
+	for _, id := range pf.Drop {
+		drop[id] = true
 	}
 	fixes, err := loadFixes()
 	if err != nil {
@@ -193,7 +222,18 @@ func runMarks(l lesson) error {
 	counts := map[string]int{}
 	var out []phrase
 	var dropped []int
+	var cut []int
 	for _, p := range src {
+		if drop[p.ID] || subtitleCredit.MatchString(strings.ReplaceAll(p.RuMarked, "+", "")) {
+			cut = append(cut, p.ID)
+			continue
+		}
+		if r, ok := pf.Replace[strconv.Itoa(p.ID)]; ok {
+			if !strings.Contains(p.RuMarked, r[0]) {
+				return fmt.Errorf("phrase-fixes.json: phrase %d has no %q", p.ID, r[0])
+			}
+			p.RuMarked = strings.Replace(p.RuMarked, r[0], r[1], 1)
+		}
 		ours := fixMarks(p.RuMarked)
 		var theirs []string
 		if !p.Misaligned {
@@ -223,7 +263,7 @@ func runMarks(l lesson) error {
 	if err := writeJSON(l.At("full-ru.json"), out); err != nil {
 		return err
 	}
-	fmt.Println("phrases", len(out), "dropped as empty", dropped, "marks", counts)
+	fmt.Println("phrases", len(out), "cut", cut, "dropped as empty", dropped, "marks", counts)
 	return nil
 }
 
