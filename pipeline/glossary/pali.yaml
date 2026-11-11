@@ -24,7 +24,7 @@
 - {display: mettā, variants: [maitri], misheard: [metha], ru: [метта — любящая доброта], reviewed: false}
 - {display: nibbāna, variants: [nirvana], misheard: [nibana], ru: ["ниббана — освобождение, прекращение страдания"], reviewed: false}
 - {display: kalāpa, variants: [kalapas], ru: [калапа — мельчайшая частица материи], reviewed: false}
-- {display: taṇhā, variants: [tanha], ru: [танха — жажда], reviewed: false}
+- {display: taṇhā, variants: [tanha], ru: ["танха — жажда, влечение"], reviewed: false}
 - {display: rāga, variants: [], ru: ["рага — влечение, страсть"], reviewed: false}
 - {display: dosa, variants: [dvesha, dosha], ru: ["доса — отвращение, ненависть"], reviewed: false}
 - {display: moha, variants: [], ru: [моха — заблуждение], reviewed: false}
@@ -32,8 +32,8 @@
 - {display: kamma, variants: [karma], ru: ["камма — действие, поступок"], reviewed: false}
 - {display: saddhā, variants: [shraddha], ru: ["саддха — вера, доверие"], reviewed: false}
 - {display: viriya, variants: [virya], ru: [вирия — усилие], reviewed: false}
-- {display: sati, variants: [], ru: [сати — осознанность], reviewed: false}
-- {display: upekkhā, variants: [upeksha], misheard: [upekha], ru: [упеккха — невозмутимость], reviewed: false}
+- {display: sati, variants: [], ru: ["сати — осознавание, осознанность"], reviewed: false}
+- {display: upekkhā, variants: [upeksha], misheard: [upekha], ru: ["упеккха — уравновешенность, невозмутимость"], reviewed: false}
 - {display: pāramī, variants: [paramis, paramita, parami], misheard: [parmi, parmis, parmes, parmig, parmigio, parmy, parame], ru: ["парами — совершенство, добродетель"], reviewed: false}
 - {display: dāna, variants: [], ru: ["дана — щедрость, дар"], reviewed: false}
 - {display: sutta, variants: [sutra], ru: [сутта — беседа Будды], reviewed: false}
@@ -75,7 +75,7 @@
 - {display: pathavī, variants: [pathavi, prithvi], ru: [патхави — элемент земли], reviewed: false}
 - {display: āpo, variants: [], ru: [апо — элемент воды], reviewed: false}
 - {display: tejo, variants: [], ru: [теджо — элемент огня], reviewed: false}
-- {display: vāyo, variants: [vayu], ru: [ваё — элемент воздуха], reviewed: false}
+- {display: vāyo, variants: [vayu], ru: [вайо — элемент воздуха], reviewed: false}
 # Added 2026-11-07 after checking all 15 transcripts against the Pali in
 # "The Discourse Summaries" (VRI): terms Goenka uses that were missing, and
 # spellings Whisper produced for known terms.
@@ -115,7 +115,7 @@
 - {display: yathā, variants: [], ru: ["ятха — как, так же как"], reviewed: false}
 - {display: sukha, variants: [], ru: ["сукха — счастье, благо"], reviewed: false}
 - {display: sukhuma, variants: [sukshma], ru: [сукхума — тонкий], reviewed: false}
-- {display: oḷārika, variants: [], misheard: [olariku, olarika], ru: ["олярика — грубый, плотный"], reviewed: false}
+- {display: oḷārika, variants: [], misheard: [olariku, olarika], ru: ["оларика — грубый, плотный"], reviewed: false}
 - {display: paripuṇṇa, variants: [], misheard: [paripunnang, paripunna], ru: ["парипунна — совершенный, полный"], reviewed: false}
 - {display: bhāvanāmayā paññā, variants: [], misheard: [bhavanamaya, bhava namaya, bhavana maya], ru: [бхаванамая панья — мудрость собственного опыта], reviewed: false}
 - {display: cintāmayā paññā, variants: [], misheard: [chintamaya, chantamaya, chinta maya], ru: [чинтамая панья — мудрость размышления], reviewed: false}
@@ -140,7 +140,7 @@
 - {display: Sāvatthī, variants: [shravasti], misheard: [shavasthi], ru: ["Саваттхи — город, где Будда жил дольше всего"], reviewed: false}
 - {display: Rājagaha, variants: [rajgir, rajgiri], ru: [Раджагаха — столица Магадхи (ныне Раджгир)], reviewed: false}
 - {display: Visākhā, variants: [], misheard: [vesakha], ru: ["Висакха — мирянка, покровительница Будды"], reviewed: false}
-- {display: Bhāradvāja, variants: [bharadwaj], misheard: [bharadwaja], ru: [Бхарадваджа — брахман из рассказа о гневе], reviewed: false}
+- {display: Bhāradvāja, variants: [bharadwaj], misheard: [bharadwaja], ru: ["Бхарадваджа — брахман, бранивший Будду (рассказ о гневе)"], reviewed: false}
 - {display: Kisā Gotamī, variants: [], misheard: [kissa gotami, kisa gotami], ru: ["Киса Готами — мать, потерявшая сына, ученица Будды"], reviewed: false}
 # The three words of the closing blessing, for when they are said apart
 # ("bhavatu, sabba, mangalam") and the phrase does not match.
