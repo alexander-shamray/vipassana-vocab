@@ -9,141 +9,141 @@
 # ipa      — optional pronunciation override; otherwise derived from `display`
 # reviewed — set to true once the owner has checked the Russian; until then the
 #            site marks the translation as a draft
-- {display: anicca, variants: [anitya], misheard: [anichcha, anicha, anichha], ru: [непостоянство], reviewed: false}
-- {display: dukkha, variants: [], misheard: [dukha, dukka], ru: [страдание, неудовлетворённость], reviewed: false}
-- {display: anattā, variants: [anatma], misheard: [anata], ru: [отсутствие «я», безличность], reviewed: false}
-- {display: sīla, variants: [shila], misheard: [seela, sheela, sheila], ru: [нравственность], reviewed: false}
-- {display: samādhi, variants: [], misheard: [samadi], ru: [сосредоточение, власть над умом], reviewed: false}
-- {display: paññā, variants: [prajna], misheard: [pannya, panya], ru: [мудрость, прозрение], reviewed: false}
-- {display: vedanā, variants: [], misheard: [vedna], ru: [ощущение], reviewed: false}
-- {display: saṅkhāra, variants: [sankharas, samskara], misheard: [sankara, sankaras, sanghara], ru: [санкхара — обусловленная реакция ума], reviewed: false}
-- {display: Dhamma, variants: [dharma], ru: ["Дхамма — закон природы, учение Будды"], reviewed: false}
-- {display: Buddha, variants: [], ru: [Будда — пробуждённый], reviewed: false}
-- {display: vipassanā, variants: [vipashyana], misheard: [vipasana, vipassna, vipasna, vipashna], ru: ["випассана — видение вещей такими, какие они есть"], reviewed: false}
-- {display: ānāpāna, variants: [], misheard: [anapan, anapanna], ru: [анапана — наблюдение естественного дыхания], reviewed: false}
-- {display: mettā, variants: [maitri], misheard: [metha], ru: [метта — любящая доброта], reviewed: false}
-- {display: nibbāna, variants: [nirvana], misheard: [nibana], ru: ["ниббана — освобождение, прекращение страдания"], reviewed: false}
-- {display: kalāpa, variants: [kalapas], ru: [калапа — мельчайшая частица материи], reviewed: false}
-- {display: taṇhā, variants: [tanha], ru: ["танха — жажда, влечение"], reviewed: false}
-- {display: rāga, variants: [], ru: ["рага — влечение, страсть"], reviewed: false}
-- {display: dosa, variants: [dvesha, dosha], ru: ["доса — отвращение, ненависть"], reviewed: false}
-- {display: moha, variants: [], ru: [моха — заблуждение], reviewed: false}
-- {display: avijjā, variants: [avijja, avidya], misheard: [avijya], ru: [авиджа — неведение], reviewed: false}
-- {display: kamma, variants: [karma], ru: ["камма — действие, поступок"], reviewed: false}
-- {display: saddhā, variants: [shraddha], ru: ["саддха — вера, доверие"], reviewed: false}
-- {display: viriya, variants: [virya], ru: [вирия — усилие], reviewed: false}
-- {display: sati, variants: [], ru: ["сати — осознавание, осознанность"], reviewed: false}
-- {display: upekkhā, variants: [upeksha], misheard: [upekha], ru: ["упеккха — уравновешенность, невозмутимость"], reviewed: false}
-- {display: pāramī, variants: [paramis, paramita, parami], misheard: [parmi, parmis, parmes, parmig, parmigio, parmy, parame], ru: ["парами — совершенство, добродетель"], reviewed: false}
-- {display: dāna, variants: [], ru: ["дана — щедрость, дар"], reviewed: false}
-- {display: sutta, variants: [sutra], ru: [сутта — беседа Будды], reviewed: false}
-- {display: Saṅgha, variants: [], misheard: [sanga], ru: [Сангха — община], reviewed: false}
-- {display: bhikkhu, variants: [bhikkhus], misheard: [bhikku], ru: [бхиккху — монах], reviewed: false}
-- {display: arahant, variants: [arahat, arhat], misheard: [arhant, arhan, anaranth], ru: [арахант — полностью освобождённый], reviewed: false}
-- {display: sotāpanna, variants: [], misheard: [sotapana], ru: [сотапанна — вошедший в поток], reviewed: false}
-- {display: jhāna, variants: [jhanas, dhyana], ru: [джхана — глубокое сосредоточение], reviewed: false}
-- {display: nāma, variants: [], ru: [нама — ум], reviewed: false}
-- {display: rūpa, variants: [], ru: [рупа — материя], reviewed: false}
-- {display: nāma-rūpa, variants: [nama rupa], ru: [нама-рупа — ум и материя], reviewed: false}
-- {display: viññāṇa, variants: [vijnana, vijnanas], misheard: [vinnana, vinyana], ru: [винняна — сознание], reviewed: false}
-- {display: saññā, variants: [], misheard: [sanna, sanya], ru: ["санна — восприятие, распознавание"], reviewed: false}
-- {display: citta, variants: [], misheard: [chitta], ru: [читта — ум], reviewed: false}
-- {display: cetanā, variants: [], misheard: [chetana], ru: ["четана — намерение, воля"], reviewed: false}
-- {display: lobha, variants: [], ru: [лобха — алчность], reviewed: false}
-- {display: adhiṭṭhāna, variants: [adhitthana, adhishthan], misheard: [adityan, adithan, adikthan], ru: [адхиттхана — твёрдая решимость], reviewed: false}
-- {display: khandha, variants: [skandha], misheard: [kandha], ru: [кхандха — совокупность], reviewed: false}
-- {display: magga, variants: [marga], misheard: [maggo], ru: [магга — путь], reviewed: false}
-- {display: ariya, variants: [arya], ru: [ария — благородный], reviewed: false}
-- {display: paṭicca samuppāda, variants: [], misheard: [paticca samupada, paticha samuppada], ru: [патичча самуппада — закон взаимозависимого возникновения], reviewed: false}
-- {display: sādhu, variants: [], ru: [садху — хорошо сказано], reviewed: false}
-- {display: Tathāgata, variants: [tathagat], ru: ["Татхагата — «так ушедший», имя Будды"], reviewed: false}
-- {display: bodhi, variants: [], ru: [бодхи — пробуждение], reviewed: false}
-- {display: Bodhisatta, variants: [bodhisattva], ru: [Бодхисатта — будущий Будда], reviewed: false}
-- {display: uppāda-vaya, variants: [uppada vaya], ru: [уппада-вая — возникновение и исчезновение], reviewed: false}
-- {display: bhaṅga, variants: [], misheard: [banga], ru: [бханга — растворение], reviewed: false}
-- {display: sampajañña, variants: [], misheard: [sampajanna, sampajanya], ru: [сампаджання — постоянное понимание непостоянства], reviewed: false}
-- {display: ātāpī, variants: [atapi], ru: [атапи — усердный], reviewed: false}
-- {display: satipaṭṭhāna, variants: [satipatthana], ru: [сатипаттхана — установление осознанности], reviewed: false}
-- {display: vedanānupassanā, variants: [vedananupassana], ru: [веданупассана — наблюдение ощущений], reviewed: false}
-- {display: kāyānupassanā, variants: [kayanupassana], ru: [каянупассана — наблюдение тела], reviewed: false}
-- {display: cittānupassanā, variants: [cittanupassana], misheard: [chittanupassana], ru: [читтанупассана — наблюдение ума], reviewed: false}
-- {display: dhammānupassanā, variants: [dhammanupassana], ru: [дхамманупассана — наблюдение содержимого ума], reviewed: false}
-- {display: anusaya, variants: [], ru: [анусая — скрытые склонности], reviewed: false}
-- {display: āsava, variants: [asavas], ru: ["асава — опьянения, загрязнения ума"], reviewed: false}
-- {display: kilesa, variants: [klesha, kleshas], misheard: [kalesha], ru: [килеса — загрязнения ума], reviewed: false}
-- {display: dhātu, variants: [dhatus], ru: [дхату — элемент], reviewed: false}
-- {display: pathavī, variants: [pathavi, prithvi], ru: [патхави — элемент земли], reviewed: false}
-- {display: āpo, variants: [], ru: [апо — элемент воды], reviewed: false}
-- {display: tejo, variants: [], ru: [теджо — элемент огня], reviewed: false}
-- {display: vāyo, variants: [vayu], ru: [вайо — элемент воздуха], reviewed: false}
+- {display: anicca, variants: [anitya], misheard: [anichcha, anicha, anichha], ru: [непостоянство], reviewed: true}
+- {display: dukkha, variants: [], misheard: [dukha, dukka], ru: [страдание, неудовлетворённость], reviewed: true}
+- {display: anattā, variants: [anatma], misheard: [anata], ru: [отсутствие «я», безличность], reviewed: true}
+- {display: sīla, variants: [shila], misheard: [seela, sheela, sheila], ru: [нравственность], reviewed: true}
+- {display: samādhi, variants: [], misheard: [samadi], ru: [сосредоточение, власть над умом], reviewed: true}
+- {display: paññā, variants: [prajna], misheard: [pannya, panya], ru: [мудрость, прозрение], reviewed: true}
+- {display: vedanā, variants: [], misheard: [vedna], ru: [ощущение], reviewed: true}
+- {display: saṅkhāra, variants: [sankharas, samskara], misheard: [sankara, sankaras, sanghara], ru: [санкхара — обусловленная реакция ума], reviewed: true}
+- {display: Dhamma, variants: [dharma], ru: ["Дхамма — закон природы, учение Будды"], reviewed: true}
+- {display: Buddha, variants: [], ru: [Будда — пробуждённый], reviewed: true}
+- {display: vipassanā, variants: [vipashyana], misheard: [vipasana, vipassna, vipasna, vipashna], ru: ["випассана — видение вещей такими, какие они есть"], reviewed: true}
+- {display: ānāpāna, variants: [], misheard: [anapan, anapanna], ru: [анапана — наблюдение естественного дыхания], reviewed: true}
+- {display: mettā, variants: [maitri], misheard: [metha], ru: [метта — любящая доброта], reviewed: true}
+- {display: nibbāna, variants: [nirvana], misheard: [nibana], ru: ["ниббана — освобождение, прекращение страдания"], reviewed: true}
+- {display: kalāpa, variants: [kalapas], ru: [калапа — мельчайшая частица материи], reviewed: true}
+- {display: taṇhā, variants: [tanha], ru: ["танха — жажда, влечение"], reviewed: true}
+- {display: rāga, variants: [], ru: ["рага — влечение, страсть"], reviewed: true}
+- {display: dosa, variants: [dvesha, dosha], ru: ["доса — отвращение, ненависть"], reviewed: true}
+- {display: moha, variants: [], ru: [моха — заблуждение], reviewed: true}
+- {display: avijjā, variants: [avijja, avidya], misheard: [avijya], ru: [авиджа — неведение], reviewed: true}
+- {display: kamma, variants: [karma], ru: ["камма — действие, поступок"], reviewed: true}
+- {display: saddhā, variants: [shraddha], ru: ["саддха — вера, доверие"], reviewed: true}
+- {display: viriya, variants: [virya], ru: [вирия — усилие], reviewed: true}
+- {display: sati, variants: [], ru: ["сати — осознавание, осознанность"], reviewed: true}
+- {display: upekkhā, variants: [upeksha], misheard: [upekha], ru: ["упеккха — уравновешенность, невозмутимость"], reviewed: true}
+- {display: pāramī, variants: [paramis, paramita, parami], misheard: [parmi, parmis, parmes, parmig, parmigio, parmy, parame], ru: ["парами — совершенство, добродетель"], reviewed: true}
+- {display: dāna, variants: [], ru: ["дана — щедрость, дар"], reviewed: true}
+- {display: sutta, variants: [sutra], ru: [сутта — беседа Будды], reviewed: true}
+- {display: Saṅgha, variants: [], misheard: [sanga], ru: [Сангха — община], reviewed: true}
+- {display: bhikkhu, variants: [bhikkhus], misheard: [bhikku], ru: [бхиккху — монах], reviewed: true}
+- {display: arahant, variants: [arahat, arhat], misheard: [arhant, arhan, anaranth], ru: [арахант — полностью освобождённый], reviewed: true}
+- {display: sotāpanna, variants: [], misheard: [sotapana], ru: [сотапанна — вошедший в поток], reviewed: true}
+- {display: jhāna, variants: [jhanas, dhyana], ru: [джхана — глубокое сосредоточение], reviewed: true}
+- {display: nāma, variants: [], ru: [нама — ум], reviewed: true}
+- {display: rūpa, variants: [], ru: [рупа — материя], reviewed: true}
+- {display: nāma-rūpa, variants: [nama rupa], ru: [нама-рупа — ум и материя], reviewed: true}
+- {display: viññāṇa, variants: [vijnana, vijnanas], misheard: [vinnana, vinyana], ru: [винняна — сознание], reviewed: true}
+- {display: saññā, variants: [], misheard: [sanna, sanya], ru: ["санна — восприятие, распознавание"], reviewed: true}
+- {display: citta, variants: [], misheard: [chitta], ru: [читта — ум], reviewed: true}
+- {display: cetanā, variants: [], misheard: [chetana], ru: ["четана — намерение, воля"], reviewed: true}
+- {display: lobha, variants: [], ru: [лобха — алчность], reviewed: true}
+- {display: adhiṭṭhāna, variants: [adhitthana, adhishthan], misheard: [adityan, adithan, adikthan], ru: [адхиттхана — твёрдая решимость], reviewed: true}
+- {display: khandha, variants: [skandha], misheard: [kandha], ru: [кхандха — совокупность], reviewed: true}
+- {display: magga, variants: [marga], misheard: [maggo], ru: [магга — путь], reviewed: true}
+- {display: ariya, variants: [arya], ru: [ария — благородный], reviewed: true}
+- {display: paṭicca samuppāda, variants: [], misheard: [paticca samupada, paticha samuppada], ru: [патичча самуппада — закон взаимозависимого возникновения], reviewed: true}
+- {display: sādhu, variants: [], ru: [садху — хорошо сказано], reviewed: true}
+- {display: Tathāgata, variants: [tathagat], ru: ["Татхагата — «так ушедший», имя Будды"], reviewed: true}
+- {display: bodhi, variants: [], ru: [бодхи — пробуждение], reviewed: true}
+- {display: Bodhisatta, variants: [bodhisattva], ru: [Бодхисатта — будущий Будда], reviewed: true}
+- {display: uppāda-vaya, variants: [uppada vaya], ru: [уппада-вая — возникновение и исчезновение], reviewed: true}
+- {display: bhaṅga, variants: [], misheard: [banga], ru: [бханга — растворение], reviewed: true}
+- {display: sampajañña, variants: [], misheard: [sampajanna, sampajanya], ru: [сампаджання — постоянное понимание непостоянства], reviewed: true}
+- {display: ātāpī, variants: [atapi], ru: [атапи — усердный], reviewed: true}
+- {display: satipaṭṭhāna, variants: [satipatthana], ru: [сатипаттхана — установление осознанности], reviewed: true}
+- {display: vedanānupassanā, variants: [vedananupassana], ru: [веданупассана — наблюдение ощущений], reviewed: true}
+- {display: kāyānupassanā, variants: [kayanupassana], ru: [каянупассана — наблюдение тела], reviewed: true}
+- {display: cittānupassanā, variants: [cittanupassana], misheard: [chittanupassana], ru: [читтанупассана — наблюдение ума], reviewed: true}
+- {display: dhammānupassanā, variants: [dhammanupassana], ru: [дхамманупассана — наблюдение содержимого ума], reviewed: true}
+- {display: anusaya, variants: [], ru: [анусая — скрытые склонности], reviewed: true}
+- {display: āsava, variants: [asavas], ru: ["асава — опьянения, загрязнения ума"], reviewed: true}
+- {display: kilesa, variants: [klesha, kleshas], misheard: [kalesha], ru: [килеса — загрязнения ума], reviewed: true}
+- {display: dhātu, variants: [dhatus], ru: [дхату — элемент], reviewed: true}
+- {display: pathavī, variants: [pathavi, prithvi], ru: [патхави — элемент земли], reviewed: true}
+- {display: āpo, variants: [], ru: [апо — элемент воды], reviewed: true}
+- {display: tejo, variants: [], ru: [теджо — элемент огня], reviewed: true}
+- {display: vāyo, variants: [vayu], ru: [вайо — элемент воздуха], reviewed: true}
 # Added 2026-11-07 after checking all 15 transcripts against the Pali in
 # "The Discourse Summaries" (VRI): terms Goenka uses that were missing, and
 # spellings Whisper produced for known terms.
-- {display: sammā, variants: [samma], ru: [правильный, совершенный — о шагах Благородного восьмеричного пути], reviewed: false}
-- {display: sammā-diṭṭhi, variants: [samma ditthi, samma drishti], misheard: [sammaditri], ru: [правильное воззрение], reviewed: false}
-- {display: sammā-saṅkappa, variants: [samma sankappa, samma sankalpa], misheard: [samma sankappu, sammasankappu], ru: [правильное намерение], reviewed: false}
-- {display: sammā-vācā, variants: [], misheard: [samma vacha, samma vacca], ru: [правильная речь], reviewed: false}
-- {display: sammā-kammanta, variants: [], misheard: [samma kamanta], ru: [правильное действие], reviewed: false}
-- {display: sammā-ājīva, variants: [], misheard: [samma ajiv, sammajiva], ru: [правильные средства к жизни], reviewed: false}
-- {display: sammā-vāyāma, variants: [], misheard: [samma vayamu, samma vayam], ru: [правильное усилие], reviewed: false}
-- {display: sammā-sati, variants: [], misheard: [samasati], ru: [правильная осознанность], reviewed: false}
-- {display: sammā-samādhi, variants: [], misheard: [samma samadi], ru: [правильное сосредоточение], reviewed: false}
-- {display: bhāvanā, variants: [], misheard: [bhavna], ru: ["бхавана — развитие ума, медитация"], reviewed: false}
-- {display: mettā-bhāvanā, variants: [], misheard: [metta bhavna, metta pauna], ru: [метта-бхавана — развитие любящей доброты], reviewed: false}
-- {display: paccaya, variants: [], misheard: [pachaya, pachchaya], ru: ["паччая — причина, условие"], reviewed: false}
-- {display: nīvaraṇa, variants: [], misheard: [nivaranas], ru: [ниварана — помеха (в медитации)], reviewed: false}
-- {display: upādāna, variants: [], misheard: [upadan], ru: ["упадана — цепляние, привязанность"], reviewed: false}
-- {display: karuṇā, variants: [], ru: [каруна — сострадание], reviewed: false}
-- {display: pūjā, variants: [], ru: ["пуджа — почитание, обряд поклонения"], reviewed: false}
-- {display: sāsana, variants: [], ru: [сасана — учение Будды и его эпоха], reviewed: false}
-- {display: bhagavā, variants: [bhagavan], ru: [Бхагава — Благословенный (эпитет Будды)], reviewed: false}
-- {display: bhavatu sabba maṅgalaṃ, variants: [bhavatu sabba mangalam], misheard: [bhavatu sabha mangalam], ru: [бхавату сабба мангалам — пусть все существа будут счастливы, «да будет всем благо» (дословно)], reviewed: false}
-- {display: Gotama, variants: [gautama], ru: [Готама — родовое имя Будды], reviewed: false}
-- {display: Siddhattha, variants: [siddhartha], ru: [Сиддхаттха — имя Будды до просветления], reviewed: false}
-- {display: Ānanda, variants: [], ru: [Ананда — ученик и помощник Будды], reviewed: false}
-- {display: Anāthapiṇḍika, variants: [], misheard: [anath pindak, anath pendika, anath pindika, anathapindak, anath pendaka, anath pindaka], ru: ["Анатхапиндика — богатый купец, покровитель Будды"], reviewed: false}
-- {display: Paṭācārā, variants: [patachara], ru: [Патачара — ученица Будды], reviewed: false}
+- {display: sammā, variants: [samma], ru: [правильный, совершенный — о шагах Благородного восьмеричного пути], reviewed: true}
+- {display: sammā-diṭṭhi, variants: [samma ditthi, samma drishti], misheard: [sammaditri], ru: [правильное воззрение], reviewed: true}
+- {display: sammā-saṅkappa, variants: [samma sankappa, samma sankalpa], misheard: [samma sankappu, sammasankappu], ru: [правильное намерение], reviewed: true}
+- {display: sammā-vācā, variants: [], misheard: [samma vacha, samma vacca], ru: [правильная речь], reviewed: true}
+- {display: sammā-kammanta, variants: [], misheard: [samma kamanta], ru: [правильное действие], reviewed: true}
+- {display: sammā-ājīva, variants: [], misheard: [samma ajiv, sammajiva], ru: [правильные средства к жизни], reviewed: true}
+- {display: sammā-vāyāma, variants: [], misheard: [samma vayamu, samma vayam], ru: [правильное усилие], reviewed: true}
+- {display: sammā-sati, variants: [], misheard: [samasati], ru: [правильная осознанность], reviewed: true}
+- {display: sammā-samādhi, variants: [], misheard: [samma samadi], ru: [правильное сосредоточение], reviewed: true}
+- {display: bhāvanā, variants: [], misheard: [bhavna], ru: ["бхавана — развитие ума, медитация"], reviewed: true}
+- {display: mettā-bhāvanā, variants: [], misheard: [metta bhavna, metta pauna], ru: [метта-бхавана — развитие любящей доброты], reviewed: true}
+- {display: paccaya, variants: [], misheard: [pachaya, pachchaya], ru: ["паччая — причина, условие"], reviewed: true}
+- {display: nīvaraṇa, variants: [], misheard: [nivaranas], ru: [ниварана — помеха (в медитации)], reviewed: true}
+- {display: upādāna, variants: [], misheard: [upadan], ru: ["упадана — цепляние, привязанность"], reviewed: true}
+- {display: karuṇā, variants: [], ru: [каруна — сострадание], reviewed: true}
+- {display: pūjā, variants: [], ru: ["пуджа — почитание, обряд поклонения"], reviewed: true}
+- {display: sāsana, variants: [], ru: [сасана — учение Будды и его эпоха], reviewed: true}
+- {display: bhagavā, variants: [bhagavan], ru: [Бхагава — Благословенный (эпитет Будды)], reviewed: true}
+- {display: bhavatu sabba maṅgalaṃ, variants: [bhavatu sabba mangalam], misheard: [bhavatu sabha mangalam], ru: [бхавату сабба мангалам — пусть все существа будут счастливы, «да будет всем благо» (дословно)], reviewed: true}
+- {display: Gotama, variants: [gautama], ru: [Готама — родовое имя Будды], reviewed: true}
+- {display: Siddhattha, variants: [siddhartha], ru: [Сиддхаттха — имя Будды до просветления], reviewed: true}
+- {display: Ānanda, variants: [], ru: [Ананда — ученик и помощник Будды], reviewed: true}
+- {display: Anāthapiṇḍika, variants: [], misheard: [anath pindak, anath pendika, anath pindika, anathapindak, anath pendaka, anath pindaka], ru: ["Анатхапиндика — богатый купец, покровитель Будды"], reviewed: true}
+- {display: Paṭācārā, variants: [patachara], ru: [Патачара — ученица Будды], reviewed: true}
 # Added 2026-11-07 from the non-English lemmas of all 15 talks, each checked in
 # its quote: Pali Goenka recites or explains, and the people and places of his
 # stories.
-- {display: khanti, variants: [kshanti], misheard: [khande], ru: [кханти — терпение], reviewed: false}
-- {display: phassa, variants: [sparsha], ru: [пхасса — контакт (органа чувств с объектом)], reviewed: false}
-- {display: saḷāyatana, variants: [shadayatana], misheard: [sarayetan, salayatana], ru: [салаятана — шесть чувственных баз], reviewed: false}
-- {display: nirodha, variants: [], misheard: [nirodh], ru: [ниродха — прекращение], reviewed: false}
-- {display: jāti, variants: [], ru: [джати — рождение], reviewed: false}
-- {display: yathā-bhūta, variants: [], misheard: [yatha bhruta, yathabhuta], ru: [ятха-бхута — как оно есть на самом деле], reviewed: false}
-- {display: yathā, variants: [], ru: ["ятха — как, так же как"], reviewed: false}
-- {display: sukha, variants: [], ru: ["сукха — счастье, благо"], reviewed: false}
-- {display: sukhuma, variants: [sukshma], ru: [сукхума — тонкий], reviewed: false}
-- {display: oḷārika, variants: [], misheard: [olariku, olarika], ru: ["оларика — грубый, плотный"], reviewed: false}
-- {display: paripuṇṇa, variants: [], misheard: [paripunnang, paripunna], ru: ["парипунна — совершенный, полный"], reviewed: false}
-- {display: bhāvanāmayā paññā, variants: [], misheard: [bhavanamaya, bhava namaya, bhavana maya], ru: [бхаванамая панья — мудрость собственного опыта], reviewed: false}
-- {display: cintāmayā paññā, variants: [], misheard: [chintamaya, chantamaya, chinta maya], ru: [чинтамая панья — мудрость размышления], reviewed: false}
-- {display: sutamayā paññā, variants: [shrutamaya], misheard: [sutmaya, sutamaya, suta maya], ru: [сутамая панья — мудрость услышанного], reviewed: false}
-- {display: sammāsambuddha, variants: [samyak sambuddha], misheard: [sambuddha, sambuddho, sammasambuddha, sambha sambuddha], ru: [саммасамбуддха — полностью просветлённый], reviewed: false}
-- {display: ariyo aṭṭhaṅgiko maggo, variants: [], misheard: [ariyo athangeko maggo, ariyo atthangiko maggo], ru: [Благородный восьмеричный путь], reviewed: false}
-- {display: bahujana-hitāya, variants: [], misheard: [bahujana hitaya], ru: [бахуджана-хитая — на благо многих], reviewed: false}
-- {display: bahujana-sukhāya, variants: [], misheard: [bahujana sukha, bahujana sukhaya], ru: [бахуджана-сукхая — на счастье многих], reviewed: false}
-- {display: mano pubbaṅgamā dhammā, variants: [], misheard: [mano pubhanga madhamma, mano pubbangama dhamma], ru: [«ум предшествует всем явлениям» (Дхаммапада, 1)], reviewed: false}
-- {display: lokavidū, variants: [], misheard: [loka vidu], ru: [локавиду — знаток миров (эпитет Будды)], reviewed: false}
-- {display: vyādhi, variants: [], ru: [вьядхи — болезнь], reviewed: false}
-- {display: svākkhāto, variants: [], misheard: [svakkhato, swakha], ru: [сваккхато — хорошо изложенная (о Дхамме)], reviewed: false}
-- {display: sandiṭṭhiko, variants: [], misheard: [sandetyako, sanditthiko], ru: [сандиттхико — видимая здесь и сейчас], reviewed: false}
-- {display: ehipassiko, variants: [], misheard: [ehipassikau], ru: [эхипассико — «приди и посмотри»], reviewed: false}
-- {display: opanayiko, variants: [], misheard: [apaneiko, abhaneiku], ru: [опанайико — ведущая к цели], reviewed: false}
-- {display: paccattaṃ, variants: [], misheard: [pachatam, pachatan], ru: [паччаттам — каждым лично], reviewed: false}
-- {display: veditabbo, variants: [], misheard: [veditabhu, veditabha], ru: [ведитаббо — должна быть постигнута], reviewed: false}
-- {display: viññūhi, variants: [], misheard: [vinyuhiti, vinyati], ru: [виннухи — мудрыми], reviewed: false}
-- {display: U Ba Khin, variants: [], misheard: [ubakhin], ru: [У Ба Кхин — бирманский учитель С. Н. Гоенки], reviewed: false}
-- {display: Sayagyi, variants: [sayaji], ipa: sɐjɐdʒiː, ru: ["Саяджи — «почтенный учитель», обращение к У Ба Кхину"], reviewed: false}
-- {display: Aṅgulimāla, variants: [], misheard: [angulimal], ru: ["Ангулимала — разбойник, ставший учеником Будды"], reviewed: false}
-- {display: Sāvatthī, variants: [shravasti], misheard: [shavasthi], ru: ["Саваттхи — город, где Будда жил дольше всего"], reviewed: false}
-- {display: Rājagaha, variants: [rajgir, rajgiri], ru: [Раджагаха — столица Магадхи (ныне Раджгир)], reviewed: false}
-- {display: Visākhā, variants: [], misheard: [vesakha], ru: ["Висакха — мирянка, покровительница Будды"], reviewed: false}
-- {display: Bhāradvāja, variants: [bharadwaj], misheard: [bharadwaja], ru: ["Бхарадваджа — брахман, бранивший Будду (рассказ о гневе)"], reviewed: false}
-- {display: Kisā Gotamī, variants: [], misheard: [kissa gotami, kisa gotami], ru: ["Киса Готами — мать, потерявшая сына, ученица Будды"], reviewed: false}
+- {display: khanti, variants: [kshanti], misheard: [khande], ru: [кханти — терпение], reviewed: true}
+- {display: phassa, variants: [sparsha], ru: [пхасса — контакт (органа чувств с объектом)], reviewed: true}
+- {display: saḷāyatana, variants: [shadayatana], misheard: [sarayetan, salayatana], ru: [салаятана — шесть чувственных баз], reviewed: true}
+- {display: nirodha, variants: [], misheard: [nirodh], ru: [ниродха — прекращение], reviewed: true}
+- {display: jāti, variants: [], ru: [джати — рождение], reviewed: true}
+- {display: yathā-bhūta, variants: [], misheard: [yatha bhruta, yathabhuta], ru: [ятха-бхута — как оно есть на самом деле], reviewed: true}
+- {display: yathā, variants: [], ru: ["ятха — как, так же как"], reviewed: true}
+- {display: sukha, variants: [], ru: ["сукха — счастье, благо"], reviewed: true}
+- {display: sukhuma, variants: [sukshma], ru: [сукхума — тонкий], reviewed: true}
+- {display: oḷārika, variants: [], misheard: [olariku, olarika], ru: ["оларика — грубый, плотный"], reviewed: true}
+- {display: paripuṇṇa, variants: [], misheard: [paripunnang, paripunna], ru: ["парипунна — совершенный, полный"], reviewed: true}
+- {display: bhāvanāmayā paññā, variants: [], misheard: [bhavanamaya, bhava namaya, bhavana maya], ru: [бхаванамая панья — мудрость собственного опыта], reviewed: true}
+- {display: cintāmayā paññā, variants: [], misheard: [chintamaya, chantamaya, chinta maya], ru: [чинтамая панья — мудрость размышления], reviewed: true}
+- {display: sutamayā paññā, variants: [shrutamaya], misheard: [sutmaya, sutamaya, suta maya], ru: [сутамая панья — мудрость услышанного], reviewed: true}
+- {display: sammāsambuddha, variants: [samyak sambuddha], misheard: [sambuddha, sambuddho, sammasambuddha, sambha sambuddha], ru: [саммасамбуддха — полностью просветлённый], reviewed: true}
+- {display: ariyo aṭṭhaṅgiko maggo, variants: [], misheard: [ariyo athangeko maggo, ariyo atthangiko maggo], ru: [Благородный восьмеричный путь], reviewed: true}
+- {display: bahujana-hitāya, variants: [], misheard: [bahujana hitaya], ru: [бахуджана-хитая — на благо многих], reviewed: true}
+- {display: bahujana-sukhāya, variants: [], misheard: [bahujana sukha, bahujana sukhaya], ru: [бахуджана-сукхая — на счастье многих], reviewed: true}
+- {display: mano pubbaṅgamā dhammā, variants: [], misheard: [mano pubhanga madhamma, mano pubbangama dhamma], ru: [«ум предшествует всем явлениям» (Дхаммапада, 1)], reviewed: true}
+- {display: lokavidū, variants: [], misheard: [loka vidu], ru: [локавиду — знаток миров (эпитет Будды)], reviewed: true}
+- {display: vyādhi, variants: [], ru: [вьядхи — болезнь], reviewed: true}
+- {display: svākkhāto, variants: [], misheard: [svakkhato, swakha], ru: [сваккхато — хорошо изложенная (о Дхамме)], reviewed: true}
+- {display: sandiṭṭhiko, variants: [], misheard: [sandetyako, sanditthiko], ru: [сандиттхико — видимая здесь и сейчас], reviewed: true}
+- {display: ehipassiko, variants: [], misheard: [ehipassikau], ru: [эхипассико — «приди и посмотри»], reviewed: true}
+- {display: opanayiko, variants: [], misheard: [apaneiko, abhaneiku], ru: [опанайико — ведущая к цели], reviewed: true}
+- {display: paccattaṃ, variants: [], misheard: [pachatam, pachatan], ru: [паччаттам — каждым лично], reviewed: true}
+- {display: veditabbo, variants: [], misheard: [veditabhu, veditabha], ru: [ведитаббо — должна быть постигнута], reviewed: true}
+- {display: viññūhi, variants: [], misheard: [vinyuhiti, vinyati], ru: [виннухи — мудрыми], reviewed: true}
+- {display: U Ba Khin, variants: [], misheard: [ubakhin], ru: [У Ба Кхин — бирманский учитель С. Н. Гоенки], reviewed: true}
+- {display: Sayagyi, variants: [sayaji], ipa: sɐjɐdʒiː, ru: ["Саяджи — «почтенный учитель», обращение к У Ба Кхину"], reviewed: true}
+- {display: Aṅgulimāla, variants: [], misheard: [angulimal], ru: ["Ангулимала — разбойник, ставший учеником Будды"], reviewed: true}
+- {display: Sāvatthī, variants: [shravasti], misheard: [shavasthi], ru: ["Саваттхи — город, где Будда жил дольше всего"], reviewed: true}
+- {display: Rājagaha, variants: [rajgir, rajgiri], ru: [Раджагаха — столица Магадхи (ныне Раджгир)], reviewed: true}
+- {display: Visākhā, variants: [], misheard: [vesakha], ru: ["Висакха — мирянка, покровительница Будды"], reviewed: true}
+- {display: Bhāradvāja, variants: [bharadwaj], misheard: [bharadwaja], ru: ["Бхарадваджа — брахман, бранивший Будду (рассказ о гневе)"], reviewed: true}
+- {display: Kisā Gotamī, variants: [], misheard: [kissa gotami, kisa gotami], ru: ["Киса Готами — мать, потерявшая сына, ученица Будды"], reviewed: true}
 # The three words of the closing blessing, for when they are said apart
 # ("bhavatu, sabba, mangalam") and the phrase does not match.
-- {display: bhavatu, variants: [], ru: [бхавату — да будет], reviewed: false}
-- {display: sabba, variants: [], ru: ["сабба — всё, все"], reviewed: false}
-- {display: maṅgalaṃ, variants: [], ru: ["мангалам — благо, счастье"], reviewed: false}
+- {display: bhavatu, variants: [], ru: [бхавату — да будет], reviewed: true}
+- {display: sabba, variants: [], ru: ["сабба — всё, все"], reviewed: true}
+- {display: maṅgalaṃ, variants: [], ru: ["мангалам — благо, счастье"], reviewed: true}
