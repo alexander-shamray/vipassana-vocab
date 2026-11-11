@@ -60,7 +60,7 @@ func runRef() error {
 	var file struct {
 		Segments []segment `json:"segments"`
 	}
-	if err := readJSON("../transcripts/"+refSource+".json", &file); err != nil {
+	if err := readJSON(data("transcripts", refSource+".json"), &file); err != nil {
 		return err
 	}
 	w, ok := bestWindow(file.Segments, refSeconds)
@@ -71,7 +71,7 @@ func runRef() error {
 		return err
 	}
 	_, err := ffmpeg(nil, "-y", "-ss", strconv.FormatFloat(w.start, 'f', -1, 64), "-to", strconv.FormatFloat(w.end, 'f', -1, 64),
-		"-i", "../audio/"+refSource+".m4a", "-ac", "1", "-ar", "24000", "-af", "highpass=f=70,lowpass=f=9000", filepath.Join("ref", "ref25.wav"))
+		"-i", data("audio", refSource+".m4a"), "-ac", "1", "-ar", "24000", "-af", "highpass=f=70,lowpass=f=9000", filepath.Join("ref", "ref25.wav"))
 	if err != nil {
 		return err
 	}

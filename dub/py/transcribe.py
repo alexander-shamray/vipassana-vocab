@@ -1,6 +1,6 @@
 """Whisper hears the Russian narration, with the time of every word."""
 import json, sys, os
-sys.path.insert(0, '../../pipeline')
+sys.path.insert(0, os.path.join(os.environ.get('DUB_REPO', '../..'), 'pipeline'))
 from lessons import RU_MEDIA, at
 from vv_pipeline import transcribe as tr
 tr.use_pip_cuda()

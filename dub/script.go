@@ -269,7 +269,7 @@ func runScript(ctx context.Context, l lesson) error {
 	var enFile struct {
 		Segments []segment `json:"segments"`
 	}
-	if err := readJSON("../transcripts/"+l.En+".json", &enFile); err != nil {
+	if err := readJSON(data("transcripts", l.En+".json"), &enFile); err != nil {
 		return err
 	}
 	var ruSegs []segment

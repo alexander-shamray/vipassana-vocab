@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"unicode/utf8"
 )
 
 const (
@@ -164,6 +165,31 @@ type fitStats struct {
 	LateMax    float64 `json:"late_max_s"`
 	EndS       float64 `json:"end_s"`
 	GainDB     float64 `json:"gain_db"` // brings the track to the loudness of the original
+	// Behind holds the clips that ended at the tempo cap or more than behindS late: dub hurry voices them faster.
+	Behind []int `json:"-"`
+}
+
+const behindS = 2.0
+
+// dueTimes says when Goenka says the words of each Russian phrase. Phrases that share one English phrase split its
+// time by their length, so the second of two starts halfway through it, not at its start.
+func dueTimes(ru []phrase, en map[int]phrase) ([]float64, error) {
+	weight := func(p phrase) float64 { return float64(max(utf8.RuneCountInString(p.RuMarked), 1)) }
+	total := map[int]float64{}
+	for _, p := range ru {
+		if p.EnID == nil {
+			return nil, fmt.Errorf("phrase %d has no English counterpart", p.ID)
+		}
+		total[*p.EnID] += weight(p)
+	}
+	before := map[int]float64{}
+	out := make([]float64, len(ru))
+	for i, p := range ru {
+		e := en[*p.EnID]
+		out[i] = e.Start + (e.End-e.Start)*before[*p.EnID]/total[*p.EnID]
+		before[*p.EnID] += weight(p)
+	}
+	return out, nil
 }
 
 func round1(x float64) float64 { return math.Round(x*10) / 10 }
@@ -178,6 +204,7 @@ func layOut(clips [][]float32, targets []float64, total float64) ([]float32, fit
 	buf := make([]float32, int((total+120)*sampleRate))
 	cursor := 0.0
 	var late, tempos []float64
+	var behind []int
 	for i, c := range clips {
 		if c == nil {
 			continue
@@ -207,6 +234,9 @@ func layOut(clips [][]float32, targets []float64, total float64) ([]float32, fit
 		cursor = t + float64(len(a))/sampleRate + phraseGap
 		late = append(late, lateness)
 		tempos = append(tempos, tempo)
+		if tempo >= maxTempo-.001 || lateness > behindS {
+			behind = append(behind, i)
+		}
 	}
 	var sum float64
 	speech := 0
@@ -236,7 +266,7 @@ func layOut(clips [][]float32, targets []float64, total float64) ([]float32, fit
 	stats := fitStats{
 		Phrases: len(late), TempoMean: math.Round(tempoSum/float64(len(tempos))*1000) / 1000, TempoAtCap: atCap,
 		LateMedian: round1(late[len(late)/2]), LateP90: round1(late[int(float64(len(late))*.9)]), LateMax: round1(late[len(late)-1]),
-		EndS: round1(cursor),
+		EndS: round1(cursor), Behind: behind,
 	}
 	return buf[:min(int(max(total, cursor+1)*sampleRate), len(buf))], stats, nil
 }
@@ -387,30 +417,33 @@ func writeFloats(path string, a []float32) error {
 // runFit lays the Russian tracks on the English timeline and builds the player's files and the .mkv.
 // The picture is not re-encoded and the English sound is copied as it is; only the Russian tracks are encoded, to AAC.
 // With statsOnly it only reports how the tracks fit.
-func runFit(l lesson, statsOnly bool) error {
+// timeline reads a lesson's phrases, when each is due on the English video, and the video's length.
+func timeline(l lesson) ([]phrase, []float64, float64, error) {
 	var ru, enList []phrase
 	if err := readJSON(l.At("full-ru.json"), &ru); err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	if err := readJSON(l.At("full-en.json"), &enList); err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	en := make(map[int]phrase, len(enList))
 	for _, p := range enList {
 		en[p.ID] = p
 	}
-	targets := make([]float64, len(ru))
-	for i, p := range ru {
-		if p.EnID == nil {
-			return fmt.Errorf("phrase %d has no English counterpart", p.ID)
-		}
-		targets[i] = en[*p.EnID].Start
+	targets, err := dueTimes(ru, en)
+	if err != nil {
+		return nil, nil, 0, err
 	}
-	video := l.At("en-video-480.mp4")
-	total, err := mediaSeconds(video)
+	total, err := mediaSeconds(l.At("en-video-480.mp4"))
+	return ru, targets, total, err
+}
+
+func runFit(l lesson, statsOnly bool) error {
+	ru, targets, total, err := timeline(l)
 	if err != nil {
 		return err
 	}
+	video := l.At("en-video-480.mp4")
 	out := l.Out()
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return err
@@ -429,7 +462,7 @@ func runFit(l lesson, statsOnly bool) error {
 		}
 	}
 	report := map[string]fitStats{}
-	englishAudio := "../audio/" + l.En + ".m4a"
+	englishAudio := data("audio", l.En+".m4a")
 	englishLUFS := 0.0
 	if !statsOnly {
 		var err error

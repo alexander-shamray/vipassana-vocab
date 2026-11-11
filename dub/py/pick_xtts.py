@@ -1,7 +1,7 @@
 """Whisper hears each fresh take; the best take replaces the phrase. pick_xtts.py init lists suspects in retry.json,
 pick_xtts.py <round> scores that round and lists what is still wrong. Originals are kept in out-full/xtts-original."""
 import glob, json, os, re, shutil, sys
-sys.path.insert(0, '../../pipeline')
+sys.path.insert(0, os.path.join(os.environ.get('DUB_REPO', '../..'), 'pipeline'))
 sys.stdout.reconfigure(encoding='utf-8')
 import soundfile as sf
 from lessons import at

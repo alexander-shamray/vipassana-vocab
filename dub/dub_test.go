@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -297,5 +299,62 @@ func TestShortenPausesCutsOnlyLongInnerPauses(t *testing.T) {
 	quiet := append(gap(1.0), tone(0.5)...) // a pause at an edge is trimSilence's business
 	if n := len(shortenPauses(quiet, 0.3)); n != len(quiet) {
 		t.Errorf("edge pause changed: %d samples, want %d", n, len(quiet))
+	}
+}
+
+func TestDueTimesSplitASharedEnglishPhrase(t *testing.T) {
+	a, b := 7, 8
+	en := map[int]phrase{7: {ID: 7, Start: 10, End: 20}, 8: {ID: 8, Start: 30, End: 32}}
+	ru := []phrase{{ID: 0, RuMarked: "раз два", EnID: &a}, {ID: 1, RuMarked: "три чет", EnID: &a}, {ID: 2, RuMarked: "пять", EnID: &b}}
+	got, err := dueTimes(ru, en)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []float64{10, 15, 30}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Errorf("due %v, want %v", got, want)
+	}
+}
+
+func TestLayOutListsPhrasesBehind(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("needs ffmpeg on PATH to change the tempo")
+	}
+	second := make([]float32, sampleRate)
+	// Three one-second clips due at once, with room for them: only the third starts more than two seconds late.
+	_, stats, err := layOut([][]float32{second, second, second}, []float64{0, 0, 0}, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(stats.Behind) != "[2]" {
+		t.Errorf("behind %v, want [2]", stats.Behind)
+	}
+}
+
+func TestFindRepoWalksUp(t *testing.T) {
+	dir := t.TempDir()
+	os.MkdirAll(filepath.Join(dir, "dub", "py"), 0o755)
+	os.MkdirAll(filepath.Join(dir, "pipeline"), 0o755)
+	os.WriteFile(filepath.Join(dir, "dub", "py", "lessons.py"), nil, 0o644)
+	deep := filepath.Join(dir, "elsewhere", "a", "b")
+	os.MkdirAll(deep, 0o755)
+	got, err := findRepo(filepath.Join(dir, "nowhere-near"), deep)
+	if err != nil || got != dir {
+		t.Errorf("findRepo = %q, %v; want %q", got, err, dir)
+	}
+	if _, err := findRepo(t.TempDir()); err == nil {
+		t.Error("a folder outside any repository was accepted")
+	}
+}
+
+func TestSubtitleCreditsAreNotSpeech(t *testing.T) {
+	for _, s := range []string{"Субтитры создавал Дима Торзок. Субтитры создавал Дима Торзок.", "Продолжение следует...", " Редактор субтитров А.Синецкая "} {
+		if !subtitleCredit.MatchString(s) {
+			t.Errorf("%q kept", s)
+		}
+	}
+	for _, s := range []string{"Продолжение следует в следующей беседе, сказал он.", "Эти субтитры создавал не он, а судьба."} {
+		if subtitleCredit.MatchString(s) {
+			t.Errorf("%q cut, but it is speech", s)
+		}
 	}
 }

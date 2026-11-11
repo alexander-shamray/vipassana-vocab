@@ -29,21 +29,56 @@ const usage = `dub: Russian dub of a lesson. Full guide: docs/dub.md
   dub xtts <lesson>      voice: XTTS, cloned from the English talk; a Whisper check; fresh takes of the wrong phrases
   dub retake <lesson> <id>...  a new XTTS take of the chosen phrases; it replaces the current one
   dub find <lesson> <word>     phrases with this word: their ids and text
+  dub hurry <lesson>     XTTS again, speaking faster, for the phrases the layout leaves late (two takes, Whisper picks)
   dub fit <lesson>       lay the tracks on the English timeline, build the files and the .mkv (-stats: only report)
   dub page <lesson>      write the player page
   dub serve              open the players to this Wi-Fi network (-addr, default :8765). No password
 
-Options: -home <folder> working folder, default data/dub-pilot. It must sit two levels below the repository root.
+Options: -home <folder> working folder, default data/dub-pilot in the repository.
 `
 
-const (
-	whisperPython = "../../pipeline/.venv/Scripts/python"
-	pyDir         = "../../dub/py/"
-	xttsDone      = "xtts-done" // written only after the last round of takes
+const xttsDone = "xtts-done" // written only after the last round of takes
+
+// repo is the repository root. run sets it to an absolute path, found from the program's own place or the current
+// folder, so the working folder may be anywhere. The relative default suits a working folder two levels below the root.
+var (
+	repo          = filepath.Join("..", "..")
+	whisperPython = filepath.Join(repo, "pipeline", ".venv", "Scripts", "python")
+	pyDir         = filepath.Join(repo, "dub", "py") + string(filepath.Separator)
 )
 
+// findRepo walks up from each start to the folder that holds both dub/py and pipeline.
+func findRepo(starts ...string) (string, error) {
+	for _, start := range starts {
+		dir, err := filepath.Abs(start)
+		if err != nil {
+			continue
+		}
+		for {
+			if exists(filepath.Join(dir, "dub", "py", "lessons.py")) && exists(filepath.Join(dir, "pipeline")) {
+				return dir, nil
+			}
+			up := filepath.Dir(dir)
+			if up == dir {
+				break
+			}
+			dir = up
+		}
+	}
+	return "", fmt.Errorf("no repository root above %v: dub needs its dub/py and pipeline folders", starts)
+}
+
+func setRepo(root string) {
+	repo = root
+	whisperPython = filepath.Join(repo, "pipeline", ".venv", "Scripts", "python")
+	pyDir = filepath.Join(repo, "dub", "py") + string(filepath.Separator)
+}
+
+// data is the pipeline's folder of downloaded talks and their transcripts.
+func data(parts ...string) string { return filepath.Join(append([]string{repo, "data"}, parts...)...) }
+
 func pythonEnv(l lesson) []string {
-	return append(os.Environ(), "DUB_WORK="+l.Work(), "DUB_RU_MEDIA="+l.RuMediaName(), "PYTHONUTF8=1", "PYTHONWARNINGS=ignore")
+	return append(os.Environ(), "DUB_WORK="+l.Work(), "DUB_REPO="+repo, "DUB_RU_MEDIA="+l.RuMediaName(), "PYTHONUTF8=1", "PYTHONWARNINGS=ignore")
 }
 
 func runPython(l lesson, python, script string, args ...string) error {
@@ -65,7 +100,7 @@ func runFetch(l lesson) error {
 	if err := os.MkdirAll(l.Work(), 0o755); err != nil {
 		return err
 	}
-	ytdlp := "../../pipeline/.venv/Scripts/yt-dlp"
+	ytdlp := filepath.Join(repo, "pipeline", ".venv", "Scripts", "yt-dlp")
 	download := func(format, path, id string) error {
 		if exists(path) {
 			return nil
@@ -82,10 +117,10 @@ func runFetch(l lesson) error {
 	if err := download("ba[ext=m4a][language^=ru]/140", l.At(l.RuMediaName()), l.Ru); err != nil {
 		return fmt.Errorf("Russian narration: %w", err)
 	}
-	if !exists("../audio/" + l.En + ".m4a") {
+	if !exists(data("audio", l.En+".m4a")) {
 		return fmt.Errorf("no English audio ../audio/%s.m4a: the dictionary pipeline downloads it", l.En)
 	}
-	if !exists("../transcripts/" + l.En + ".json") {
+	if !exists(data("transcripts", l.En+".json")) {
 		return fmt.Errorf("no English transcript ../transcripts/%s.json: the dictionary pipeline makes it", l.En)
 	}
 	return nil
@@ -152,6 +187,50 @@ func runRetake(l lesson, ids []string) error {
 		return err
 	}
 	return oneTake(l, nextTake(l))
+}
+
+// hurrySpeed is how much faster XTTS speaks in dub hurry. XTTS stretches its own speech, which keeps the voice
+// cleaner than atempo; past about 1.2 it starts to swallow syllables.
+const hurrySpeed = "1.2"
+
+// runHurry voices again, faster, the XTTS phrases that the layout leaves late or at the tempo cap. Two takes each;
+// Whisper keeps a take only when it hears no more errors than in the current one, and then the shorter one wins.
+func runHurry(l lesson) error {
+	ru, targets, total, err := timeline(l)
+	if err != nil {
+		return err
+	}
+	clips, err := engineClips(l, "xtts-clone", ru)
+	if err != nil {
+		return err
+	}
+	_, stats, err := layOut(clips, targets, total)
+	if err != nil {
+		return err
+	}
+	ids := make([]int, len(stats.Behind))
+	for k, i := range stats.Behind {
+		ids[k] = ru[i].ID
+	}
+	fmt.Printf("xtts-clone: %d phrases late or at the cap; late %.1f / %.1f / %.1f s (median / 90%% / max)\n",
+		len(ids), stats.LateMedian, stats.LateP90, stats.LateMax)
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := writeJSON(l.At("retry.json"), ids); err != nil {
+		return err
+	}
+	if err := writeJSON(l.At("retry-forced.json"), []int{}); err != nil {
+		return err
+	}
+	os.Setenv("DUB_XTTS_SPEED", hurrySpeed)
+	defer os.Unsetenv("DUB_XTTS_SPEED")
+	for range 2 {
+		if err := oneTake(l, nextTake(l)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // runFind lists the phrases holding a word, to repair by number.
@@ -264,7 +343,7 @@ func runAll(ctx context.Context, l lesson) error {
 func run(args []string) error {
 	root := flag.NewFlagSet("dub", flag.ContinueOnError)
 	root.Usage = func() { fmt.Print(usage) }
-	home := root.String("home", filepath.Join("data", "dub-pilot"), "working folder")
+	home := root.String("home", "", "working folder (default: data/dub-pilot in the repository)")
 	if err := root.Parse(args); err != nil {
 		return err
 	}
@@ -272,6 +351,21 @@ func run(args []string) error {
 	if len(rest) == 0 {
 		fmt.Print(usage)
 		return nil
+	}
+	starts := []string{"."}
+	if exe, err := os.Executable(); err == nil {
+		starts = append([]string{filepath.Dir(exe)}, starts...)
+	}
+	if *home != "" {
+		starts = append(starts, *home)
+	}
+	top, err := findRepo(starts...)
+	if err != nil {
+		return err
+	}
+	setRepo(top)
+	if *home == "" {
+		*home = data("dub-pilot")
 	}
 	if err := os.Chdir(*home); err != nil {
 		return fmt.Errorf("working folder: %w", err)
@@ -333,6 +427,8 @@ func run(args []string) error {
 		return runRetake(l, extra)
 	case "find":
 		return runFind(l, extra[0])
+	case "hurry":
+		return runHurry(l)
 	case "fit":
 		return runFit(l, *stats)
 	case "page":

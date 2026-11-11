@@ -1,0 +1,11 @@
+{
+  "2": {
+    "why": "The narrator reads 405-419 a second time: the English says it once.",
+    "drop": [420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432]
+  },
+  "3": {
+    "why": "An explanation for new students of «Бхавату сабба мангалам» and «садху»: the English talk does not have it.",
+    "drop": [699, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709],
+    "replace": {"710": ["риту+ал. ", ""]}
+  }
+}

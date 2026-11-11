@@ -15,6 +15,7 @@ from TTS.api import TTS
 from marks import xtts_text
 
 take = int(sys.argv[1])
+speed = float(os.environ.get('DUB_XTTS_SPEED', '1'))  # dub hurry asks for faster speech
 out = at('out-full/xtts-takes')
 os.makedirs(out, exist_ok=True)
 ids = set(json.load(open(at('retry.json'))))
@@ -23,5 +24,5 @@ for p in json.load(open(at('full-ru.json'), encoding='utf-8')):
     if p['id'] in ids:
         torch.manual_seed(1000 * take + p['id'])
         tts.tts_to_file(text=xtts_text(p['ru_marked']), speaker_wav='ref/ref25.wav', language='ru',
-                        file_path=f'{out}/{p["id"]:04d}-{take}.wav', split_sentences=False)
-print('takes done', take, len(ids), flush=True)
+                        file_path=f'{out}/{p["id"]:04d}-{take}.wav', split_sentences=False, speed=speed)
+print('takes done', take, len(ids), 'speed', speed, flush=True)
